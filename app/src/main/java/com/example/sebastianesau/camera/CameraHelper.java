@@ -11,8 +11,11 @@ import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.FileProvider;
+import android.util.Log;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,8 +42,13 @@ public class CameraHelper {
         return new Configuration(activity);
     }
 
-    public static void start(@NonNull Activity activity, @NonNull File file, int requestCode) {
-        activity.startActivityForResult(getPickImageChooserIntent(file), requestCode);
+    public static void start(@NonNull Activity activity, int requestCode) {
+        try {
+            activity.startActivityForResult(getPickImageChooserIntent(), requestCode);
+        } catch (IOException io) {
+            //TODO
+            Log.e(activity.getClass().getSimpleName(), io.getMessage(), io);
+        }
     }
 
     /**
@@ -50,15 +58,16 @@ public class CameraHelper {
      * <p>
      * <p>
      * activity/fragment/widget.
-     *
-     * @param file file to save the image
      */
-    private static Intent getPickImageChooserIntent(File file) {
+    private static Intent getPickImageChooserIntent() throws IOException {
         List<Intent> allIntents = new ArrayList<>();
         PackageManager packageManager = context.getPackageManager();
 
         if (includeCamera) {
-            allIntents.addAll(getCameraIntents(packageManager, file));
+            List<Intent> cameraIntents = getCameraIntents(packageManager);
+            if (cameraIntents != null) {
+                allIntents.addAll(cameraIntents);
+            }
         }
 
         List<Intent> galleryIntents = getGalleryIntents(packageManager, Intent.ACTION_GET_CONTENT);
@@ -87,12 +96,15 @@ public class CameraHelper {
     /**
      * Get all Camera intents for capturing image using device camera apps.
      */
-    private static List<Intent> getCameraIntents(@NonNull PackageManager packageManager, File file) {
-        CameraHelper.file = file;
+    private static List<Intent> getCameraIntents(@NonNull PackageManager packageManager) throws IOException {
         List<Intent> allIntents = new ArrayList<>();
 
         // Determine Uri of camera image to  save.
         Uri outputFileUri = getCaptureImageOutputUri();
+        if (outputFileUri == null) {
+            //TODO info
+            return null;
+        }
 
         Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         List<ResolveInfo> listCam = packageManager.queryIntentActivities(captureIntent, 0);
@@ -147,12 +159,18 @@ public class CameraHelper {
     /**
      * Get URI to image received from capture by camera.
      */
-    private static Uri getCaptureImageOutputUri() {
-        Uri outputFileUri = null;
-        if (file != null) {
-            outputFileUri = Uri.fromFile(file);
+    private static Uri getCaptureImageOutputUri() throws IOException, NullPointerException {
+        file = FileHelper.getImageFile(context);
+//        String packageName = context.getApplicationContext().getPackageName();
+//        String authority = packageName + ".photopicker.fileprovider";
+        try {
+            Uri uri = Uri.fromFile(file);
+            return uri;
+        } catch (NullPointerException e) {
+            //TODO
+            Log.e(context.getClass().getSimpleName(), e.getMessage(), e);
+            return null;
         }
-        return outputFileUri;
     }
 
     /**
@@ -166,13 +184,17 @@ public class CameraHelper {
         return outputFileUri;
     }
 
+    public static boolean deleteFile() {
+        return FileHelper.removeFile(file);
+    }
+
     /**
-     * Get the URI of the selected image from {@link #getPickImageChooserIntent(File)}.<br>
+     * Get the URI of the selected image from {@link #getPickImageChooserIntent()}.<br>
      * Will return the correct URI for camera and gallery image.
      *
      * @param data the returned data of the activity result
      */
-    public static Uri getPickImageResultUri(@Nullable Intent data) {
+    public static Uri getPickImageResultUri(@Nullable Intent data) throws IOException {
         boolean isCamera = true;
         if (data != null && data.getData() != null) {
             String action = data.getAction();
@@ -199,15 +221,20 @@ public class CameraHelper {
         return includeMultipleSelect;
     }
 
+    public static void handleActivityResult(int requestCode, int resultCode, Intent data, Activity activity, Callbacks callbacks) {
+
+    }
+
     public static final class Configuration {
         Activity activity;
+
         public Configuration(@NonNull Activity activity) {
             this.activity = activity;
             context = activity;
         }
 
-        public void start(@NonNull File file, int requestCode) {
-            CameraHelper.start(activity, file, requestCode);
+        public void start(int requestCode) {
+            CameraHelper.start(activity, requestCode);
         }
 
         public Configuration title(CharSequence title) {
@@ -229,5 +256,52 @@ public class CameraHelper {
             CameraHelper.includeMultipleSelect = includeMultipleSelect;
             return this;
         }
+
+        public Configuration filePath(String filePath) {
+            FileHelper.configuration(context).folderPath(filePath);
+            return this;
+        }
+
+        public Configuration imageFileName(String fileName) {
+            FileHelper.configuration(context).imageFileName(fileName);
+            return this;
+        }
+
+        public Configuration writeToExternalStorrage(boolean writeToExternalStorrage) {
+            FileHelper.configuration(context).writeToExternalStorrage(writeToExternalStorrage);
+            return this;
+        }
+
+        public Configuration environment(String environment) {
+            FileHelper.configuration(context).environment(environment);
+            return this;
+        }
+
+        public Configuration createTempFile(boolean createTempFile) {
+            FileHelper.configuration(context).createTempFile(createTempFile);
+            return this;
+        }
+
+        public Configuration suffix(String suffix) {
+            FileHelper.configuration(context).suffix(suffix);
+            return this;
+        }
+
+        public Configuration setAutoImageFileName(boolean autoImageFileName) {
+            FileHelper.configuration(context).setAutoImageFileName(autoImageFileName);
+            return this;
+        }
+    }
+
+    public interface Callbacks {
+        void onImagePickerError(Exception e, ImageSource source, int type);
+
+        void onImagePicked(File imageFile, ImageSource source, int type);
+
+        void onCanceled(ImageSource source, int type);
+    }
+
+    public enum ImageSource {
+        GALLERY, DOCUMENTS, CAMERA
     }
 }

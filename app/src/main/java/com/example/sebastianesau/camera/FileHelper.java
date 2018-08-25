@@ -9,17 +9,19 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class FileHelper {
 
+    private static final String TAG = FileHelper.class.getSimpleName();
+
     /**
      * Coniguration
      */
     private static String EXTERNAL_FOLDER_PATH_DEFAULT;
-    private static String IMAGE_FILE_NAME_DEFAULT;
     /**
      * DIRECTORY_MUSIC
      * DIRECTORY_PODCASTS
@@ -33,64 +35,78 @@ public class FileHelper {
      * DIRECTORY_DOCUMENTS
      */
     private static String ENVIRONMENT_DEFAULT = Environment.DIRECTORY_DCIM;
+    private static final boolean CREATE_TEMP_FILE_DEFAULT = true;
+    private static final String SUFFIX_DEFAULT = ".jpg";
+    private static final boolean AUTO_IMAGE_FILE_NAME_DEFAULT = true;
 
     private static String folderPath;
     private static String imageFileName;
+    private static boolean autoImageFileName;
     private static String environment;
+    private static boolean createTempFile;
+    private static String suffix;
 
     private static boolean writeToExternalStorrage = true;
     private static Context context;
 
     private static Configuration configuration;
+    private static boolean hasConfig;
 
+    public static Configuration configuration(Context context) {
+        return configuration == null ? getConfiguration(context) : configuration;
+    }
 
     private static Configuration getConfiguration(Context context) {
         return new Configuration(context);
     }
 
-    private static void checkConfiguration(Context context) {
-        if (configuration == null) {
-            getConfiguration(context);
-        }
-    }
-
-
-    public static File getImageFile(Context context, String TAG) {
-        checkConfiguration(context);
-        try {
-            // Create an image file name
-            if (writeToExternalStorrage) {
-                if (isExternalStorageReadable() && isExternalStorageWritable()) {
-                    File image = File.createTempFile(getImageFileName(), ".jpg", createExternalPublicFolder(TAG));
-                    return image;
-                } else {
-                    //TODO read/write error
-                }
+    public static File getImageFile(Context context) throws IOException {
+        configuration(context);
+        // Create an image file name
+        if (writeToExternalStorrage) {
+            if (isExternalStorageReadable() && isExternalStorageWritable()) {
+                return createImageFile();
             } else {
-
+                //TODO read/write error
             }
-        } catch (Exception io) {
-            //TODO
-            Log.e(TAG, io.getMessage(), io);
-            io.printStackTrace();
+        } else {
+
         }
         return null;
     }
+
+    public static File createImageFile() throws IOException {
+        File folderPath = createExternalPublicFolder();
+        if (folderPath == null) {
+            return null;
+        }
+        if (createTempFile) {
+            File image = File.createTempFile(getImageFileName(), suffix, createExternalPublicFolder());
+            return image;
+        } else {
+            File image = new File(createExternalPublicFolder(), getImageFileName() + suffix);
+            return image;
+        }
+    }
+
 
     /**
      * Erstellt einen Ordner auf dem externen Speicher falls dieser noch nicht exestiert
      *
      * @return FolderPath
      */
-    private static File createExternalPublicFolder(String TAG) {
+    private static File createExternalPublicFolder() {
         //Ref. https://stackoverflow.com/questions/22366217/cant-create-folder-on-external-storage-on-android
 //        File file = new File(Environment.getExternalStorageDirectory() + File.separator + FOLDER_PATH);
-        File file = new File(Environment.getExternalStoragePublicDirectory(environment) + File.separator + folderPath);
+        File file = new File(Environment.getExternalStoragePublicDirectory(environment) + File.separator + getFolderPath());
 
         if (!file.exists()) {
             Log.d(TAG, "Folder doesn't exist, creating it...");
             boolean rv = file.mkdir();
             Log.d(TAG, "Folder creation " + (rv ? "success" : "failed"));
+//            if (!rv) {
+//                return null;
+//            }
         } else {
             Log.d(TAG, "Folder already exists.");
         }
@@ -116,6 +132,21 @@ public class FileHelper {
         return false;
     }
 
+    public static boolean removeFile(@NonNull File file) {
+        try {
+            if (file.exists()) {
+                if (file.delete()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } catch (NullPointerException e) {
+            //TODO
+            Log.e(context.getClass().getSimpleName(), e.getMessage(), e);
+        }
+        return false;
+    }
     //TODO einbauen
 
     /**
@@ -140,14 +171,15 @@ public class FileHelper {
     }
 
     public static String getImageFileName() {
-        return (imageFileName == null || imageFileName.isEmpty()) ? getDefaultImageFileName() : imageFileName;
+        return autoImageFileName ? getDefaultImageFileName() : imageFileName;
     }
 
-    public static String getDefaultImageFileName() {
-        return IMAGE_FILE_NAME_DEFAULT;
+    private static String getDefaultImageFileName() {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        return "JPEG_" + timeStamp + "_";
     }
 
-    public String getFolderPath() {
+    public static String getFolderPath() {
         return (folderPath == null || folderPath.isEmpty()) ? EXTERNAL_FOLDER_PATH_DEFAULT : folderPath;
     }
 
@@ -155,22 +187,24 @@ public class FileHelper {
         return writeToExternalStorrage;
     }
 
+    public static boolean isCreateTempFile() {
+        return createTempFile;
+    }
 
     public static final class Configuration {
 
         private Configuration(Context context) {
             FileHelper.context = context;
-            EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString();
-            folderPath = EXTERNAL_FOLDER_PATH_DEFAULT;
-
-            defaultImageFileName();
-            environment = ENVIRONMENT_DEFAULT;
-        }
-
-        public void defaultImageFileName() {
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            String imageFileName = "JPEG_" + timeStamp + "_";
-            IMAGE_FILE_NAME_DEFAULT = imageFileName;
+            if (!hasConfig) {
+                //TODO den anhang bei FolderPath ändern
+                EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString() + "\\Test";
+                folderPath = EXTERNAL_FOLDER_PATH_DEFAULT;
+                environment = ENVIRONMENT_DEFAULT;
+                createTempFile = CREATE_TEMP_FILE_DEFAULT;
+                suffix = SUFFIX_DEFAULT;
+                autoImageFileName = AUTO_IMAGE_FILE_NAME_DEFAULT;
+                hasConfig = true;
+            }
         }
 
         public Configuration folderPath(String folderPath) {
@@ -180,6 +214,12 @@ public class FileHelper {
 
         public Configuration imageFileName(String imageFileName) {
             FileHelper.imageFileName = imageFileName;
+            FileHelper.autoImageFileName = true;
+            return this;
+        }
+
+        public Configuration setAutoImageFileName(boolean autoImageFileName) {
+            FileHelper.autoImageFileName = autoImageFileName;
             return this;
         }
 
@@ -191,6 +231,16 @@ public class FileHelper {
 
         public Configuration environment(String environment) {
             FileHelper.environment = environment;
+            return this;
+        }
+
+        public Configuration createTempFile(boolean createTempFile) {
+            FileHelper.createTempFile = createTempFile;
+            return this;
+        }
+
+        public Configuration suffix(String suffix) {
+            FileHelper.suffix = suffix;
             return this;
         }
     }

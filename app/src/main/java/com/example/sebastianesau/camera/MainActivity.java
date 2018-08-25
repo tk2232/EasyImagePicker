@@ -1,9 +1,11 @@
 package com.example.sebastianesau.camera;
 
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -86,25 +88,35 @@ public class MainActivity extends AppCompatActivity {
         if (INCLUDE_MULTIPLE) {
             requestCode = PICK_IMAGE_MULTIPLE_REQUEST;
         }
+        CropImage.activity().start();
+        EasyImage
         CameraHelper
                 .activity(this)
                 .includeCamera(true)
                 .includeDocuments(true)
-                .includeMultipleSelect(true)
-                .start(FileHelper.getImageFile(this, TAG), requestCode);
+                .includeMultipleSelect(false)
+                .start(requestCode);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // Make sure the request was successful
-        if (resultCode == RESULT_OK) {
+        if (resultCode == RESULT_OK && data != null) {
             switch (requestCode) {
                 //TODO PICK_IMAGE_MULTIPLE https://stackoverflow.com/questions/19585815/select-multiple-images-from-android-gallery
                 case PICK_IMAGE_REQUEST:
                     resultSingleImage(data);
+                    break;
                 case PICK_IMAGE_MULTIPLE_REQUEST:
                     resultMultipleImage(data);
+                    break;
+            }
+        } else {
+            if (!CameraHelper.deleteFile()) {
+                Toast.makeText(MainActivity.this, "error delete file", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(MainActivity.this, "delete file succesfull", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -115,7 +127,11 @@ public class MainActivity extends AppCompatActivity {
 //                    Bitmap imageBitmap = (Bitmap) extras.get("data");
 //                    mImageView.setImageBitmap(imageBitmap);
 //                    return;
-        picUri = mCameraHelper.getPickImageResultUri(data);
+        try {
+            picUri = mCameraHelper.getPickImageResultUri(data);
+        } catch (IOException io) {
+            Log.e(this.getClass().getSimpleName(), io.getMessage(), io);
+        }
         if (picUri != null) {
             try {
                 myBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), picUri);
@@ -146,7 +162,49 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void resultMultipleImage(Intent data) {
+        // Get the Image from data
 
+        String[] filePathColumn = {MediaStore.Images.Media.DATA};
+        List imagesEncodedList = new ArrayList<String>();
+        String imageEncoded;
+        ClipData d = data.getClipData();
+        if (data.getData() != null && data.getClipData() != null && data.getClipData().getItemCount() == 1) {
+
+            Uri mImageUri = data.getData();
+
+            // Get the cursor
+            Cursor cursor = getContentResolver().query(mImageUri,
+                    filePathColumn, null, null, null);
+            // Move to first row
+            cursor.moveToFirst();
+
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            imageEncoded = cursor.getString(columnIndex);
+            cursor.close();
+
+        } else {
+            if (data.getClipData() != null) {
+                ClipData mClipData = data.getClipData();
+                ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
+                for (int i = 0; i < mClipData.getItemCount(); i++) {
+
+                    ClipData.Item item = mClipData.getItemAt(i);
+                    Uri uri = item.getUri();
+                    mArrayUri.add(uri);
+                    // Get the cursor
+                    Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
+                    // Move to first row
+                    cursor.moveToFirst();
+
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    imageEncoded = cursor.getString(columnIndex);
+                    imagesEncodedList.add(imageEncoded);
+                    cursor.close();
+
+                }
+                Log.v("LOG_TAG", "Selected Images" + mArrayUri.size());
+            }
+        }
     }
 
     @Override
@@ -162,17 +220,6 @@ public class MainActivity extends AppCompatActivity {
                         mPermissionSnackBar.dismiss();
                     }
                     openIntent();
-
-//                    if (isOpenGalleryAction) {
-//                        mImageHandler.openEasyImage(this, permissionSnackBar, "", 0);
-////                        mImageHandler.openEasyImage(this, permissionSnackBar, "", true, true, true);
-//                    } else if (isCropImageAction) {
-//                        cropImage();
-//                    } else {
-//                        loadImages();
-//                    }
-//                    isCropImageAction = false;
-//                    isOpenGalleryAction = false;
                 }
                 break;
         }
