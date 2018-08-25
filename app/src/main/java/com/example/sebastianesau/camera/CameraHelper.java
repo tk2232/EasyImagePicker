@@ -1,6 +1,7 @@
 package com.example.sebastianesau.camera;
 
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -21,11 +22,17 @@ import java.util.List;
 
 public class CameraHelper {
 
+    private final static int PICK_IMAGE_REQUEST = 0;
+    private final static int PICK_IMAGE_MULTIPLE_REQUEST = 1;
+
+    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
+
     private static File file;
     private static CharSequence title = "";
     private static boolean includeCamera = false;
     private static boolean includeDocuments = false;
     private static boolean includeMultipleSelect = false;
+    private static boolean copyPickedImagesToPublicGallery = true;
 
     private static Context context;
 
@@ -42,9 +49,9 @@ public class CameraHelper {
         return new Configuration(activity);
     }
 
-    public static void start(@NonNull Activity activity, int requestCode) {
+    public static void start(@NonNull Activity activity) {
         try {
-            activity.startActivityForResult(getPickImageChooserIntent(), requestCode);
+            activity.startActivityForResult(getPickImageChooserIntent(), PICK_IMAGE_REQUEST);
         } catch (IOException io) {
             //TODO
             Log.e(activity.getClass().getSimpleName(), io.getMessage(), io);
@@ -100,11 +107,12 @@ public class CameraHelper {
         List<Intent> allIntents = new ArrayList<>();
 
         // Determine Uri of camera image to  save.
-        Uri outputFileUri = getCaptureImageOutputUri();
-        if (outputFileUri == null) {
-            //TODO info
-            return null;
-        }
+//        Uri outputFileUri = getCaptureImageOutputUri();
+//        Uri imageUri = FileProvider.getUriForFile(context, "your/path/", FileHelper.getFileFromProvider(context));
+
+        File imagePath = FileHelper.getCameraPicturesLocation(context);
+        Uri uri = FileHelper.getUriToFile(context, imagePath);
+
 
         Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         List<ResolveInfo> listCam = packageManager.queryIntentActivities(captureIntent, 0);
@@ -112,8 +120,8 @@ public class CameraHelper {
             Intent intent = new Intent(captureIntent);
             intent.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
             intent.setPackage(res.activityInfo.packageName);
-            if (outputFileUri != null) {
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
+            if (uri != null) {
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
             }
             allIntents.add(intent);
         }
@@ -160,9 +168,7 @@ public class CameraHelper {
      * Get URI to image received from capture by camera.
      */
     private static Uri getCaptureImageOutputUri() throws IOException, NullPointerException {
-        file = FileHelper.getImageFile(context);
-//        String packageName = context.getApplicationContext().getPackageName();
-//        String authority = packageName + ".photopicker.fileprovider";
+        file = FileHelper.tempImageDirectory(context);
         try {
             Uri uri = Uri.fromFile(file);
             return uri;
@@ -171,17 +177,6 @@ public class CameraHelper {
             Log.e(context.getClass().getSimpleName(), e.getMessage(), e);
             return null;
         }
-    }
-
-    /**
-     * Get URI to image received from capture by camera.
-     */
-    public static Uri getCaptureImageOutputUri(File file) {
-        Uri outputFileUri = null;
-        if (file != null) {
-            outputFileUri = Uri.fromFile(file);
-        }
-        return outputFileUri;
     }
 
     public static boolean deleteFile() {
@@ -203,15 +198,63 @@ public class CameraHelper {
         return isCamera || data.getData() == null ? getCaptureImageOutputUri() : data.getData();
     }
 
+    public static void handleActivityResult(int requestCode, int resultCode, Intent data, Activity activity, Callbacks callbacks) {
+        if (requestCode == PICK_IMAGE_REQUEST) {
+            if (resultCode == Activity.RESULT_OK) {
+                if (requestCode == PICK_IMAGE_REQUEST && !isPhoto(data)) {
+                    onPictureReturnedFromGallery(data, activity, callbacks);
+                } else if (isPhoto(data)) {
+
+                }
+            } else {
+                if (requestCode == PICK_IMAGE_REQUEST) {
+                    callbacks.onCanceled(ImageSource.GALLERY, 0);
+                } else {
+
+                }
+            }
+        }
+    }
+
+    private static boolean isPhoto(Intent data) {
+        return data == null || data.getData() == null && data.getClipData() == null;
+    }
+
+    private static void onPictureReturnedFromGallery(Intent data, Activity activity, @NonNull Callbacks callbacks) {
+        try {
+            ClipData clipData = data.getClipData();
+            List<File> files = new ArrayList();
+            if (clipData == null) {
+                Uri uri = data.getData();
+                File file = FileHelper.pickedExistingPicture(activity, uri);
+                files.add(file);
+            } else {
+                for (int i = 0; i < clipData.getItemCount(); ++i) {
+                    Uri uri = clipData.getItemAt(i).getUri();
+                    File file = FileHelper.pickedExistingPicture(activity, uri);
+                    files.add(file);
+                }
+            }
+
+            if (copyPickedImagesToPublicGallery) {
+                FileHelper.copyFilesInSeparateThread(activity, files);
+            }
+
+            callbacks.onImagesPicked(files, ImageSource.GALLERY, 0);
+        } catch (Exception var8) {
+            var8.printStackTrace();
+            callbacks.onImagePickerError(var8, ImageSource.GALLERY, 0);
+        }
+
+    }
+
     public static CharSequence getTitle() {
         return title;
     }
 
-
     public static boolean isIncludeCamera() {
         return includeCamera;
     }
-
 
     public static boolean isIncludeDocuments() {
         return includeDocuments;
@@ -219,10 +262,6 @@ public class CameraHelper {
 
     public static boolean isIncludeMultipleSelect() {
         return includeMultipleSelect;
-    }
-
-    public static void handleActivityResult(int requestCode, int resultCode, Intent data, Activity activity, Callbacks callbacks) {
-
     }
 
     public static final class Configuration {
@@ -233,8 +272,8 @@ public class CameraHelper {
             context = activity;
         }
 
-        public void start(int requestCode) {
-            CameraHelper.start(activity, requestCode);
+        public void start() {
+            CameraHelper.start(activity);
         }
 
         public Configuration title(CharSequence title) {
@@ -254,6 +293,11 @@ public class CameraHelper {
 
         public Configuration includeMultipleSelect(boolean includeMultipleSelect) {
             CameraHelper.includeMultipleSelect = includeMultipleSelect;
+            return this;
+        }
+
+        public Configuration shouldCopyPickedImagesToPublicGalleryAppFolder(boolean copyPickedImagesToPublicGallery) {
+            CameraHelper.copyPickedImagesToPublicGallery = copyPickedImagesToPublicGallery;
             return this;
         }
 
@@ -294,14 +338,31 @@ public class CameraHelper {
     }
 
     public interface Callbacks {
-        void onImagePickerError(Exception e, ImageSource source, int type);
+        void onImagePickerError(Exception var1, ImageSource var2, int var3);
 
-        void onImagePicked(File imageFile, ImageSource source, int type);
+        void onImagesPicked(@NonNull List<File> var1, ImageSource var2, int var3);
 
-        void onCanceled(ImageSource source, int type);
+        void onCanceled(ImageSource var1, int var2);
     }
 
-    public enum ImageSource {
-        GALLERY, DOCUMENTS, CAMERA
+    public static enum ImageSource {
+        GALLERY,
+        DOCUMENTS,
+        CAMERA_IMAGE,
+        CAMERA_VIDEO;
+
+        private ImageSource() {
+        }
+    }
+
+    public abstract static class DefaultCallback implements Callbacks {
+        public DefaultCallback() {
+        }
+
+        public void onImagePickerError(Exception e, ImageSource source, int type) {
+        }
+
+        public void onCanceled(ImageSource source, int type) {
+        }
     }
 }

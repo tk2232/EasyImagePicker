@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import pl.aprilapps.easyphotopicker.DefaultCallback;
 import pl.aprilapps.easyphotopicker.EasyImage;
 
 public class MainActivity extends AppCompatActivity {
@@ -63,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
         initClickListeneer();
+
+        EasyImage.configuration(this).setAllowMultiplePickInGallery(false);
     }
 
     private void initViews() {
@@ -88,37 +91,46 @@ public class MainActivity extends AppCompatActivity {
         if (INCLUDE_MULTIPLE) {
             requestCode = PICK_IMAGE_MULTIPLE_REQUEST;
         }
-        CropImage.activity().start();
-        EasyImage
+//        EasyImage.openChooserWithGallery(this, "", 0);
+//        EasyImage
         CameraHelper
                 .activity(this)
                 .includeCamera(true)
                 .includeDocuments(true)
                 .includeMultipleSelect(false)
-                .start(requestCode);
+                .start();
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        // Make sure the request was successful
-        if (resultCode == RESULT_OK && data != null) {
-            switch (requestCode) {
-                //TODO PICK_IMAGE_MULTIPLE https://stackoverflow.com/questions/19585815/select-multiple-images-from-android-gallery
-                case PICK_IMAGE_REQUEST:
-                    resultSingleImage(data);
-                    break;
-                case PICK_IMAGE_MULTIPLE_REQUEST:
-                    resultMultipleImage(data);
-                    break;
+
+        CameraHelper.handleActivityResult(requestCode, resultCode, data, this, new CameraHelper.DefaultCallback() {
+            @Override
+            public void onImagesPicked(@NonNull List<File> var1, CameraHelper.ImageSource var2, int var3) {
+                Uri uri = Uri.fromFile(var1.get(0));
+                mImageView.setImageURI(uri);
+                System.out.println();
             }
-        } else {
-            if (!CameraHelper.deleteFile()) {
-                Toast.makeText(MainActivity.this, "error delete file", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(MainActivity.this, "delete file succesfull", Toast.LENGTH_LONG).show();
+
+            @Override
+            public void onImagePickerError(Exception e, CameraHelper.ImageSource source, int type) {
+                super.onImagePickerError(e, source, type);
             }
-        }
+        });
+
+
+        EasyImage.handleActivityResult(requestCode, resultCode, data, this, new DefaultCallback() {
+            @Override
+            public void onImagePickerError(Exception e, EasyImage.ImageSource source, int type) {
+                //Some error handling
+            }
+
+            @Override
+            public void onImagesPicked(List<File> imagesFiles, EasyImage.ImageSource source, int type) {
+                //Handle the images
+            }
+        });
     }
 
     private void resultSingleImage(Intent data) {
@@ -208,7 +220,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
             Permissions.showSnackbar(MainActivity.this, mPermissionSnackBar, R.string.setting, R.string.permission_denied_explanation);

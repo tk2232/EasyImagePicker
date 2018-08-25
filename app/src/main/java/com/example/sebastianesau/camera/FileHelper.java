@@ -3,16 +3,27 @@ package com.example.sebastianesau.camera;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
 public class FileHelper {
 
@@ -38,6 +49,10 @@ public class FileHelper {
     private static final boolean CREATE_TEMP_FILE_DEFAULT = true;
     private static final String SUFFIX_DEFAULT = ".jpg";
     private static final boolean AUTO_IMAGE_FILE_NAME_DEFAULT = true;
+    private static String INERNAL_IMAGE_TEMP_FILE;
+    private static final String PRIVATE_TEMP_FILE_CHILD_DEFAULT = "ImageTemp";
+
+    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
 
     private static String folderPath;
     private static String imageFileName;
@@ -52,12 +67,152 @@ public class FileHelper {
     private static Configuration configuration;
     private static boolean hasConfig;
 
-    public static Configuration configuration(Context context) {
-        return configuration == null ? getConfiguration(context) : configuration;
-    }
-
     private static Configuration getConfiguration(Context context) {
         return new Configuration(context);
+    }
+
+    public static File pickedExistingPicture(@NonNull Context context, Uri photoUri) throws IOException {
+        InputStream pictureInputStream = context.getContentResolver().openInputStream(photoUri);
+        File directory = tempImageDirectory(context);
+        File photoFile = new File(directory, UUID.randomUUID().toString() + "." + getMimeType(context, photoUri));
+        photoFile.createNewFile();
+        writeToFile(pictureInputStream, photoFile);
+        return photoFile;
+    }
+
+    private final static String DEFAULT_FOLDER_NAME = "EasyImage";
+
+    public static File getTempFileTest(Context context) {
+        File privateTempDir = new File(context.getCacheDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
+        if (!privateTempDir.exists()) privateTempDir.mkdirs();
+        return privateTempDir;
+    }
+
+    public static Uri getUriToFile(@NonNull Context context, @NonNull File file) {
+        String packageName = context.getApplicationContext().getPackageName();
+        String authority = packageName  + ".fileprovider";
+        return FileProvider.getUriForFile(context, authority, file);
+    }
+
+    public static File getCameraPicturesLocation(@NonNull Context context) throws IOException {
+        File dir = tempImageDirectory(context);
+        return File.createTempFile(UUID.randomUUID().toString(), ".jpg", dir);
+    }
+
+    public static File getFileFromProvider(Context context) {
+        String packageName = context.getApplicationContext().getPackageName();
+        String authority = packageName + ".fileprovider";
+        File path = new File(context.getFilesDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
+        if (!path.exists()) path.mkdirs();
+        return new File(path, "image.jpg");
+    }
+
+    public static File tempImageDirectory(@NonNull Context context) {
+        configuration(context);
+        File privateTempDir = new File(context.getCacheDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
+        if (!privateTempDir.exists()) {
+            privateTempDir.mkdirs();
+        }
+
+        return privateTempDir;
+    }
+
+    private static void writeToFile(InputStream in, File file) {
+        try {
+            OutputStream out = new FileOutputStream(file);
+            byte[] buf = new byte[1024];
+
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+
+            out.close();
+            in.close();
+        } catch (Exception var5) {
+            var5.printStackTrace();
+        }
+
+    }
+
+    private static String getMimeType(@NonNull Context context, @NonNull Uri uri) {
+        String extension;
+        if (uri.getScheme().equals("content")) {
+            MimeTypeMap mime = MimeTypeMap.getSingleton();
+            extension = mime.getExtensionFromMimeType(context.getContentResolver().getType(uri));
+        } else {
+            extension = MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(new File(uri.getPath())).toString());
+        }
+
+        return extension;
+    }
+
+    static void copyFilesInSeparateThread(final Context context, final List<File> filesToCopy) {
+        (new Thread(new Runnable() {
+            public void run() {
+                List<File> copiedFiles = new ArrayList();
+                int i = 1;
+
+                for (Iterator var3 = filesToCopy.iterator(); var3.hasNext(); ++i) {
+                    File fileToCopy = (File) var3.next();
+                    File dstDir = new File(Environment.getExternalStoragePublicDirectory(environment), getFolderPath());
+                    if (!dstDir.exists()) {
+                        dstDir.mkdirs();
+                    }
+
+                    String[] filenameSplit = fileToCopy.getName().split("\\.");
+                    String extension = "." + filenameSplit[filenameSplit.length - 1];
+//                    String filename = String.format("IMG_%s_%d.%s", (new SimpleDateFormat("yyyyMMdd_HHmmss")).format(Calendar.getInstance().getTime()), i, extension);
+                    String filename = getImageFileName() + suffix;
+                    File dstFile = new File(dstDir, filename);
+
+                    try {
+                        dstFile.createNewFile();
+                        copyFile(fileToCopy, dstFile);
+                        copiedFiles.add(dstFile);
+                    } catch (IOException var11) {
+                        var11.printStackTrace();
+                    }
+                }
+
+                scanCopiedImages(context, copiedFiles);
+            }
+        })).run();
+    }
+
+    private static void copyFile(File src, File dst) throws IOException {
+        InputStream in = new FileInputStream(src);
+        writeToFile(in, dst);
+    }
+
+    static void scanCopiedImages(Context context, List<File> copiedImages) {
+        String[] paths = new String[copiedImages.size()];
+
+        for (int i = 0; i < copiedImages.size(); ++i) {
+            paths[i] = ((File) copiedImages.get(i)).toString();
+        }
+
+        MediaScannerConnection.scanFile(context, paths, (String[]) null, new MediaScannerConnection.OnScanCompletedListener() {
+            public void onScanCompleted(String path, Uri uri) {
+                Log.d(this.getClass().getSimpleName(), "Scanned " + path + ":");
+                Log.d(this.getClass().getSimpleName(), "-> uri=" + uri);
+            }
+        });
+    }
+
+    public static File getTempImageFile(@NonNull Context context) throws IOException {
+        configuration(context);
+        if (writeToExternalStorrage) {
+            if (isExternalStorageReadable() && isExternalStorageWritable()) {
+                File file = new File(context.getFilesDir(), INERNAL_IMAGE_TEMP_FILE + suffix);
+                return file;
+            } else {
+                //TODO read/write error
+            }
+        } else {
+
+        }
+        return null;
     }
 
     public static File getImageFile(Context context) throws IOException {
@@ -175,8 +330,8 @@ public class FileHelper {
     }
 
     private static String getDefaultImageFileName() {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        return "JPEG_" + timeStamp + "_";
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSS").format(new Date());
+        return suffix.toUpperCase() + "_" + timeStamp + "_";
     }
 
     public static String getFolderPath() {
@@ -197,7 +352,8 @@ public class FileHelper {
             FileHelper.context = context;
             if (!hasConfig) {
                 //TODO den anhang bei FolderPath ändern
-                EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString() + "\\Test";
+                EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString() + "_Test";
+                INERNAL_IMAGE_TEMP_FILE = "temp_image";
                 folderPath = EXTERNAL_FOLDER_PATH_DEFAULT;
                 environment = ENVIRONMENT_DEFAULT;
                 createTempFile = CREATE_TEMP_FILE_DEFAULT;
@@ -243,5 +399,9 @@ public class FileHelper {
             FileHelper.suffix = suffix;
             return this;
         }
+    }
+
+    public static Configuration configuration(Context context) {
+        return configuration == null ? getConfiguration(context) : configuration;
     }
 }
