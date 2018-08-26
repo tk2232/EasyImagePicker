@@ -12,7 +12,6 @@ import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.content.FileProvider;
 import android.util.Log;
 
 import java.io.File;
@@ -110,7 +109,7 @@ public class CameraHelper {
 //        Uri outputFileUri = getCaptureImageOutputUri();
 //        Uri imageUri = FileProvider.getUriForFile(context, "your/path/", FileHelper.getFileFromProvider(context));
 
-        File imagePath = FileHelper.getCameraPicturesLocation(context);
+        File imagePath = FileHelper.getCameraTempFile(context);
         Uri uri = FileHelper.getUriToFile(context, imagePath);
 
 
@@ -168,7 +167,7 @@ public class CameraHelper {
      * Get URI to image received from capture by camera.
      */
     private static Uri getCaptureImageOutputUri() throws IOException, NullPointerException {
-        file = FileHelper.tempImageDirectory(context);
+        file = FileHelper.tempCacheImageDirectory(context);
         try {
             Uri uri = Uri.fromFile(file);
             return uri;
@@ -204,7 +203,7 @@ public class CameraHelper {
                 if (requestCode == PICK_IMAGE_REQUEST && !isPhoto(data)) {
                     onPictureReturnedFromGallery(data, activity, callbacks);
                 } else if (isPhoto(data)) {
-
+                    onPictureReturnedFromCamera(activity, callbacks);
                 }
             } else {
                 if (requestCode == PICK_IMAGE_REQUEST) {
@@ -246,6 +245,35 @@ public class CameraHelper {
             callbacks.onImagePickerError(var8, ImageSource.GALLERY, 0);
         }
 
+    }
+
+    private static void onPictureReturnedFromCamera(Activity activity, @NonNull Callbacks callbacks) {
+        try {
+            List<File> files = new ArrayList();
+            File photoFile = FileHelper.getCameraTempFile(activity.getApplicationContext());
+            if (photoFile == null) {
+                //TODO exception message
+                callbacks.onImagePickerError(new Exception("Unable to get the picture returned from camera"), ImageSource.CAMERA_IMAGE, 0);
+            }
+            if (photoFile == null) {
+                Exception e = new IllegalStateException("Unable to get the picture returned from camera");
+                callbacks.onImagePickerError(e, ImageSource.CAMERA_IMAGE, 0);
+            } else {
+                files.add(photoFile);
+                if (copyPickedImagesToPublicGallery) {
+                    FileHelper.copyFilesInSeparateThread(activity, files);
+                }
+                callbacks.onImagesPicked(files, ImageSource.CAMERA_IMAGE, 0);
+            }
+        } catch (NullPointerException npe) {
+            callbacks.onImagePickerError(npe, ImageSource.CAMERA_IMAGE, 0);
+        } catch (IllegalArgumentException ie) {
+            callbacks.onImagePickerError(ie, ImageSource.CAMERA_IMAGE, 0);
+        } catch (IOException io) {
+            callbacks.onImagePickerError(io, ImageSource.CAMERA_IMAGE, 0);
+        } catch (Exception e) {
+            callbacks.onImagePickerError(e, ImageSource.CAMERA_IMAGE, 0);
+        }
     }
 
     public static CharSequence getTitle() {

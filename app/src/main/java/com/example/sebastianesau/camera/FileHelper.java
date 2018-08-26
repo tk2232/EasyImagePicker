@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -73,7 +72,7 @@ public class FileHelper {
 
     public static File pickedExistingPicture(@NonNull Context context, Uri photoUri) throws IOException {
         InputStream pictureInputStream = context.getContentResolver().openInputStream(photoUri);
-        File directory = tempImageDirectory(context);
+        File directory = tempCacheImageDirectory(context);
         File photoFile = new File(directory, UUID.randomUUID().toString() + "." + getMimeType(context, photoUri));
         photoFile.createNewFile();
         writeToFile(pictureInputStream, photoFile);
@@ -90,7 +89,14 @@ public class FileHelper {
 
     public static Uri getUriToFile(@NonNull Context context, @NonNull File file) {
         String packageName = context.getApplicationContext().getPackageName();
-        String authority = packageName  + ".fileprovider";
+        String authority = packageName + ".fileprovider";
+        return FileProvider.getUriForFile(context, authority, file);
+    }
+
+    public static Uri getUriToFileTempFile(@NonNull Context context) throws IOException {
+        String packageName = context.getApplicationContext().getPackageName();
+        String authority = packageName + ".fileprovider";
+        File file = getCameraTempFile(context);
         return FileProvider.getUriForFile(context, authority, file);
     }
 
@@ -98,6 +104,12 @@ public class FileHelper {
         File dir = tempImageDirectory(context);
         return File.createTempFile(UUID.randomUUID().toString(), ".jpg", dir);
     }
+
+    public static File getCameraTempFile(@NonNull Context context) throws IOException {
+        File dir = tempImageDirectory(context);
+        return new File(dir + File.separator + INERNAL_IMAGE_TEMP_FILE + suffix);
+    }
+
 
     public static File getFileFromProvider(Context context) {
         String packageName = context.getApplicationContext().getPackageName();
@@ -107,13 +119,22 @@ public class FileHelper {
         return new File(path, "image.jpg");
     }
 
-    public static File tempImageDirectory(@NonNull Context context) {
+    public static File tempCacheImageDirectory(@NonNull Context context) {
         configuration(context);
         File privateTempDir = new File(context.getCacheDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
         if (!privateTempDir.exists()) {
             privateTempDir.mkdirs();
         }
+        return privateTempDir;
+    }
 
+    public static File tempImageDirectory(@NonNull Context context) {
+        configuration(context);
+        //TODO nach erfolgreichen tests auf getFilesDir
+        File privateTempDir = new File(context.getExternalFilesDir(null), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
+        if (!privateTempDir.exists()) {
+            privateTempDir.mkdirs();
+        }
         return privateTempDir;
     }
 

@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
         initClickListeneer();
+//        startActivity(new Intent(this, FileProviderTest.class));
 
         EasyImage.configuration(this).setAllowMultiplePickInGallery(false);
     }
@@ -109,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onImagesPicked(@NonNull List<File> var1, CameraHelper.ImageSource var2, int var3) {
                 Uri uri = Uri.fromFile(var1.get(0));
+                mImageView.setImageURI(null);
                 mImageView.setImageURI(uri);
                 System.out.println();
             }
@@ -128,7 +130,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onImagesPicked(List<File> imagesFiles, EasyImage.ImageSource source, int type) {
-                //Handle the images
+                Uri uri = Uri.fromFile(imagesFiles.get(0));
+                System.out.println();
             }
         });
     }
