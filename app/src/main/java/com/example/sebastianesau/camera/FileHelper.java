@@ -1,6 +1,5 @@
 package com.example.sebastianesau.camera;
 
-import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.media.MediaScannerConnection;
@@ -10,6 +9,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
+
+import com.example.sebastianesau.camera.ImagePicker.FileConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,115 +29,122 @@ public class FileHelper {
 
     private static final String TAG = FileHelper.class.getSimpleName();
 
-    /**
-     * Coniguration
-     */
-    private static String EXTERNAL_FOLDER_PATH_DEFAULT;
+//    /**
+//     * Coniguration
+//     */
+//    private static String EXTERNAL_FOLDER_PATH_DEFAULT;
+//
+//    /**
+//     * DIRECTORY_MUSIC
+//     * DIRECTORY_PODCASTS
+//     * DIRECTORY_RINGTONES
+//     * DIRECTORY_ALARMS
+//     * DIRECTORY_NOTIFICATIONS
+//     * DIRECTORY_PICTURES damit gibt es probleme beim auslesen onActivityResult
+//     * DIRECTORY_MOVIES
+//     * DIRECTORY_DOWNLOADS
+//     * DIRECTORY_DCIM
+//     * DIRECTORY_DOCUMENTS
+//     */
+//    private static String ENVIRONMENT_DEFAULT = Environment.DIRECTORY_DCIM;
+//    private static final boolean CREATE_TEMP_FILE_DEFAULT = true;
+//    private static final String SUFFIX_DEFAULT = ".jpg";
+//    private static final boolean AUTO_IMAGE_FILE_NAME_DEFAULT = true;
+//    private static String INERNAL_IMAGE_TEMP_FILE;
+//    private static final String PRIVATE_TEMP_FILE_CHILD_DEFAULT = "ImageTemp";
+//
+//
+//    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
+//    private static String folderPath;
+//    private static String imageFileName;
+//    private static boolean autoImageFileName;
+//    private static String environment;
+//    private static boolean createTempFile;
+//    private static String suffix;
+//    private static boolean writeToExternalStorrage = true;
 
-    /**
-     * DIRECTORY_MUSIC
-     * DIRECTORY_PODCASTS
-     * DIRECTORY_RINGTONES
-     * DIRECTORY_ALARMS
-     * DIRECTORY_NOTIFICATIONS
-     * DIRECTORY_PICTURES damit gibt es probleme beim auslesen onActivityResult
-     * DIRECTORY_MOVIES
-     * DIRECTORY_DOWNLOADS
-     * DIRECTORY_DCIM
-     * DIRECTORY_DOCUMENTS
-     */
-    private static String ENVIRONMENT_DEFAULT = Environment.DIRECTORY_DCIM;
-    private static final boolean CREATE_TEMP_FILE_DEFAULT = true;
-    private static final String SUFFIX_DEFAULT = ".jpg";
-    private static final boolean AUTO_IMAGE_FILE_NAME_DEFAULT = true;
-    private static String INERNAL_IMAGE_TEMP_FILE;
-    private static final String PRIVATE_TEMP_FILE_CHILD_DEFAULT = "ImageTemp";
 
+//    private static Context context;
 
-    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
-    private static String folderPath;
-    private static String imageFileName;
-    private static boolean autoImageFileName;
-    private static String environment;
-    private static boolean createTempFile;
-    private static String suffix;
-    private static boolean writeToExternalStorrage = true;
-
-
-    private static Context context;
-
-    private static Configuration configuration;
+//    private static FileConfiguration configuration;
 //    private static boolean hasConfig;
 
-    private static Configuration getConfiguration(Context context) {
-        return new Configuration(context);
+//    private static Configuration getConfiguration(Context context) {
+//        return new Configuration(context);
+//    }
+
+    /**
+     * Erstellt ein im internal storrage ein Tempfile
+     *
+     * @param config
+     * @return
+     * @throws IOException
+     */
+    public static File getCameraTempFile(@NonNull FileConfiguration config) throws IOException {
+        File dir = getTempImageDirectory(config);
+        return new File(dir + File.separator + config.getInternalImageFilename() + config.getSuffix());
     }
 
-    public static File pickedExistingPicture(@NonNull Context context, Uri photoUri) throws IOException {
-        InputStream pictureInputStream = context.getContentResolver().openInputStream(photoUri);
-        File directory = tempCacheImageDirectory(context);
-        File photoFile = new File(directory, UUID.randomUUID().toString() + "." + getMimeType(context, photoUri));
+    /**
+     * Gibt den Ordner vom private internal storrage zurück
+     *
+     * @param config
+     * @return
+     */
+    public static File getTempImageDirectory(@NonNull FileConfiguration config) {
+        //TODO nach erfolgreichen tests auf getFilesDir
+        File privateTempDir = new File(config.getContext().getExternalFilesDir(null), config.getPrivateTempFilePathChild());
+        if (!privateTempDir.exists()) {
+            privateTempDir.mkdirs();
+        }
+        return privateTempDir;
+    }
+
+    /**
+     * Gibt die Uri vom fileprovider wieder. Fileprovider muss in der Manifest angemeldet werden
+     *
+     * @param config
+     * @param file
+     * @return
+     */
+    public static Uri getUriToFile(@NonNull FileConfiguration config, @NonNull File file) {
+        String packageName = config.getContext().getApplicationContext().getPackageName();
+        String authority = packageName + ".fileprovider";
+        return FileProvider.getUriForFile(config.getContext(), authority, file);
+    }
+
+    /**
+     * Copiert das Foto auf den external storrage
+     *
+     * @param config
+     * @param photoUri
+     * @return
+     * @throws IOException
+     */
+    public static File pickedExistingPicture(@NonNull FileConfiguration config, Uri photoUri) throws IOException {
+        InputStream pictureInputStream = config.getContext().getContentResolver().openInputStream(photoUri);
+        //TODO check File directory = tempCacheImageDirectory(config.getContext());
+        File directory = getTempImageDirectory(config);
+        File photoFile = new File(directory, UUID.randomUUID().toString() + "." + getMimeType(config.getContext(), photoUri));
         photoFile.createNewFile();
         writeToFile(pictureInputStream, photoFile);
         return photoFile;
     }
 
-    public static File getTempFileTest(Context context) {
-        File privateTempDir = new File(context.getCacheDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
-        if (!privateTempDir.exists()) privateTempDir.mkdirs();
-        return privateTempDir;
-    }
-
-    public static Uri getUriToFile(@NonNull Context context, @NonNull File file) {
-        String packageName = context.getApplicationContext().getPackageName();
-        String authority = packageName + ".fileprovider";
-        return FileProvider.getUriForFile(context, authority, file);
-    }
-
-    public static Uri getUriToFileTempFile(@NonNull Context context) throws IOException {
-        String packageName = context.getApplicationContext().getPackageName();
-        String authority = packageName + ".fileprovider";
-        File file = getCameraTempFile(context);
-        return FileProvider.getUriForFile(context, authority, file);
-    }
-
-    public static File getCameraPicturesLocation(@NonNull Context context) throws IOException {
-        File dir = tempImageDirectory(context);
+    @Deprecated
+    public static File getCameraPicturesLocation(@NonNull FileConfiguration config) throws IOException {
+        File dir = getTempImageDirectory(config);
         return File.createTempFile(UUID.randomUUID().toString(), ".jpg", dir);
     }
 
-    public static File getCameraTempFile(@NonNull Context context) throws IOException {
-        File dir = tempImageDirectory(context);
-        return new File(dir + File.separator + INERNAL_IMAGE_TEMP_FILE + suffix);
-    }
-
-
-    public static File getFileFromProvider(Context context) {
-        String packageName = context.getApplicationContext().getPackageName();
-        String authority = packageName + ".fileprovider";
-        File path = new File(context.getFilesDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
-        if (!path.exists()) path.mkdirs();
-        return new File(path, "image.jpg");
-    }
-
-    public static File tempCacheImageDirectory(@NonNull Context context) {
-        configuration(context);
-        File privateTempDir = new File(context.getCacheDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
-        if (!privateTempDir.exists()) {
-            privateTempDir.mkdirs();
-        }
-        return privateTempDir;
-    }
-
-    public static File tempImageDirectory(@NonNull Context context) {
-        configuration(context);
-        //TODO nach erfolgreichen tests auf getFilesDir
-        File privateTempDir = new File(context.getExternalFilesDir(null), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
-        if (!privateTempDir.exists()) {
-            privateTempDir.mkdirs();
-        }
-        return privateTempDir;
-    }
+//    public static File tempCacheImageDirectory(@NonNull Context context) {
+//        configuration(context);
+//        File privateTempDir = new File(context.getCacheDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
+//        if (!privateTempDir.exists()) {
+//            privateTempDir.mkdirs();
+//        }
+//        return privateTempDir;
+//    }
 
     private static void writeToFile(InputStream in, File file) {
         try {
@@ -164,19 +172,18 @@ public class FileHelper {
         } else {
             extension = MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(new File(uri.getPath())).toString());
         }
-
         return extension;
     }
 
-    public static void copyFilesInSeparateThread(final Context context, final List<File> filesToCopy) {
+    public static void copyFilesInSeparateThread(final FileConfiguration config, final List<File> filesToCopy) {
         (new Thread(new Runnable() {
             public void run() {
                 List<File> copiedFiles = new ArrayList();
                 int i = 1;
 
-                for (Iterator var3 = filesToCopy.iterator(); var3.hasNext(); ++i) {
-                    File fileToCopy = (File) var3.next();
-                    File dstDir = new File(Environment.getExternalStoragePublicDirectory(environment), getFolderPath());
+                for (Iterator iterator = filesToCopy.iterator(); iterator.hasNext(); ++i) {
+                    File fileToCopy = (File) iterator.next();
+                    File dstDir = new File(Environment.getExternalStoragePublicDirectory(config.getEnvironment()), config.getFolderPath());
                     if (!dstDir.exists()) {
                         dstDir.mkdirs();
                     }
@@ -184,7 +191,7 @@ public class FileHelper {
                     String[] filenameSplit = fileToCopy.getName().split("\\.");
                     String extension = "." + filenameSplit[filenameSplit.length - 1];
 //                    String filename = String.format("IMG_%s_%d.%s", (new SimpleDateFormat("yyyyMMdd_HHmmss")).format(Calendar.getInstance().getTime()), i, extension);
-                    String filename = getImageFileName() + suffix;
+                    String filename = getImageFileName(config) + config.getSuffix();
                     File dstFile = new File(dstDir, filename);
 
                     try {
@@ -195,8 +202,7 @@ public class FileHelper {
                         var11.printStackTrace();
                     }
                 }
-
-                scanCopiedImages(context, copiedFiles);
+                scanCopiedImages(config.getContext(), copiedFiles);
             }
         })).run();
     }
@@ -222,11 +228,10 @@ public class FileHelper {
     }
 
     @Deprecated
-    public static File getTempImageFile(@NonNull Context context) throws IOException {
-        configuration(context);
-        if (writeToExternalStorrage) {
+    public static File getTempImageFile(@NonNull FileConfiguration config) throws IOException {
+        if (config.isWriteToExternalStorrage()) {
             if (isExternalStorageReadable() && isExternalStorageWritable()) {
-                File file = new File(context.getFilesDir(), INERNAL_IMAGE_TEMP_FILE + suffix);
+                File file = new File(config.getContext().getFilesDir(), config.getInternalImageFilename() + config.getSuffix());
                 return file;
             } else {
                 //TODO read/write error
@@ -238,12 +243,11 @@ public class FileHelper {
     }
 
     @Deprecated
-    public static File getImageFile(Context context) throws IOException {
-        configuration(context);
+    public static File getImageFile(FileConfiguration config) throws IOException {
         // Create an image file name
-        if (writeToExternalStorrage) {
+        if (config.isWriteToExternalStorrage()) {
             if (isExternalStorageReadable() && isExternalStorageWritable()) {
-                return createImageFile();
+                return createImageFile(config);
             } else {
                 //TODO read/write error
             }
@@ -253,30 +257,30 @@ public class FileHelper {
         return null;
     }
 
-    public static File createImageFile() throws IOException {
-        File folderPath = createExternalPublicFolder();
+    @Deprecated
+    public static File createImageFile(FileConfiguration config) throws IOException {
+        File folderPath = createExternalPublicFolder(config);
         if (folderPath == null) {
             return null;
         }
-        if (createTempFile) {
-            File image = File.createTempFile(getImageFileName(), suffix, createExternalPublicFolder());
+        if (config.isCreateTempFile()) {
+            File image = File.createTempFile(getImageFileName(config), config.getSuffix(), createExternalPublicFolder(config));
             return image;
         } else {
-            File image = new File(createExternalPublicFolder(), getImageFileName() + suffix);
+            File image = new File(createExternalPublicFolder(config), getImageFileName(config) + config.getSuffix());
             return image;
         }
     }
-
 
     /**
      * Erstellt einen Ordner auf dem externen Speicher falls dieser noch nicht exestiert
      *
      * @return FolderPath
      */
-    private static File createExternalPublicFolder() {
+    private static File createExternalPublicFolder(@NonNull FileConfiguration config) {
         //Ref. https://stackoverflow.com/questions/22366217/cant-create-folder-on-external-storage-on-android
 //        File file = new File(Environment.getExternalStorageDirectory() + File.separator + FOLDER_PATH);
-        File file = new File(Environment.getExternalStoragePublicDirectory(environment) + File.separator + getFolderPath());
+        File file = new File(Environment.getExternalStoragePublicDirectory(config.getEnvironment()) + File.separator + config.getFolderPath());
 
         if (!file.exists()) {
             Log.d(TAG, "Folder doesn't exist, creating it...");
@@ -310,7 +314,7 @@ public class FileHelper {
         return false;
     }
 
-    public static boolean removeFile(@NonNull File file) {
+    public static boolean removeFile(@NonNull FileConfiguration config, @NonNull File file) {
         try {
             if (file.exists()) {
                 if (file.delete()) {
@@ -321,7 +325,7 @@ public class FileHelper {
             }
         } catch (NullPointerException e) {
             //TODO
-            Log.e(context.getClass().getSimpleName(), e.getMessage(), e);
+            Log.e(config.getContext().getClass().getSimpleName(), e.getMessage(), e);
         }
         return false;
     }
@@ -348,83 +352,16 @@ public class FileHelper {
         }
     }
 
-    public static String getImageFileName() {
-        return autoImageFileName ? getDefaultImageFileName() : imageFileName;
+    public static String getImageFileName(@NonNull FileConfiguration config) {
+        return config.isAutoImageFileName() ? getDefaultImageFileName(config) : config.getImageFileName();
     }
 
-    private static String getDefaultImageFileName() {
+    private static String getDefaultImageFileName(@NonNull FileConfiguration config) {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSS").format(new Date());
-        return suffix.toUpperCase() + "_" + timeStamp + "_";
+        return config.getSuffix().toUpperCase() + "_" + timeStamp + "_";
     }
 
-    public static String getFolderPath() {
-        return (folderPath == null || folderPath.isEmpty()) ? EXTERNAL_FOLDER_PATH_DEFAULT : folderPath;
-    }
-
-    public boolean isWriteToExternalStorrage() {
-        return writeToExternalStorrage;
-    }
-
-    public static boolean isCreateTempFile() {
-        return createTempFile;
-    }
-
-    public static final class Configuration {
-
-        private Configuration(Context context) {
-            FileHelper.context = context;
-            if (!hasConfig) {
-                //TODO den anhang bei FolderPath ändern
-                EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString() + "_Test";
-                INERNAL_IMAGE_TEMP_FILE = "temp_image";
-                folderPath = EXTERNAL_FOLDER_PATH_DEFAULT;
-                environment = ENVIRONMENT_DEFAULT;
-                createTempFile = CREATE_TEMP_FILE_DEFAULT;
-                suffix = SUFFIX_DEFAULT;
-                autoImageFileName = AUTO_IMAGE_FILE_NAME_DEFAULT;
-                hasConfig = true;
-            }
-        }
-
-        public Configuration folderPath(String folderPath) {
-            FileHelper.folderPath = folderPath;
-            return this;
-        }
-
-        public Configuration imageFileName(String imageFileName) {
-            FileHelper.imageFileName = imageFileName;
-            FileHelper.autoImageFileName = true;
-            return this;
-        }
-
-        public Configuration setAutoImageFileName(boolean autoImageFileName) {
-            FileHelper.autoImageFileName = autoImageFileName;
-            return this;
-        }
-
-        public Configuration writeToExternalStorrage(boolean writeToExternalStorrage) {
-            FileHelper.writeToExternalStorrage = writeToExternalStorrage;
-            return this;
-        }
-
-
-        public Configuration environment(String environment) {
-            FileHelper.environment = environment;
-            return this;
-        }
-
-        public Configuration createTempFile(boolean createTempFile) {
-            FileHelper.createTempFile = createTempFile;
-            return this;
-        }
-
-        public Configuration suffix(String suffix) {
-            FileHelper.suffix = suffix;
-            return this;
-        }
-    }
-
-    public static Configuration configuration(Context context) {
-        return configuration == null ? getConfiguration(context) : configuration;
-    }
+//    public static Configuration configuration(Context context) {
+//        return configuration == null ? getConfiguration(context) : configuration;
+//    }
 }

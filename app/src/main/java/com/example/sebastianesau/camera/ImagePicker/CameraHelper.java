@@ -38,6 +38,7 @@ public class CameraHelper {
     private static boolean copyPickedImagesToPublicGallery = true;
 
     private static File file;
+    private static FileConfiguration fileConfiguration;
     private static Context context;
 
     /**
@@ -47,7 +48,6 @@ public class CameraHelper {
     public CameraHelper(Context context) {
         this.context = context;
     }
-
 
     /**
      * Configuration Klasse ist unten eingefügt.
@@ -123,8 +123,8 @@ public class CameraHelper {
         List<Intent> allIntents = new ArrayList<>();
 
         // Determine Uri of camera image to  save. (TempFile)
-        File imagePath = FileHelper.getCameraTempFile(context);
-        Uri uri = FileHelper.getUriToFile(context, imagePath);
+        File imagePath = FileHelper.getCameraTempFile(fileConfiguration);
+        Uri uri = FileHelper.getUriToFile(fileConfiguration, imagePath);
 
         Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         List<ResolveInfo> listCam = packageManager.queryIntentActivities(captureIntent, 0);
@@ -177,7 +177,7 @@ public class CameraHelper {
      * Get URI to image received from capture by camera.
      */
     private static Uri getCaptureImageOutputUri() throws IOException {
-        file = FileHelper.tempCacheImageDirectory(context);
+        file = FileHelper.getTempImageDirectory(fileConfiguration);
         Uri uri = Uri.fromFile(file);
         return uri;
     }
@@ -186,7 +186,7 @@ public class CameraHelper {
      * @return the romovestate
      */
     public static boolean deleteFile() {
-        return FileHelper.removeFile(file);
+        return FileHelper.removeFile(fileConfiguration, file);
     }
 
     /**
@@ -243,19 +243,19 @@ public class CameraHelper {
             List<File> files = new ArrayList();
             if (clipData == null) {
                 Uri uri = data.getData();
-                File file = FileHelper.pickedExistingPicture(activity, uri);
+                File file = FileHelper.pickedExistingPicture(fileConfiguration, uri);
                 files.add(file);
             } else {
                 for (int i = 0; i < clipData.getItemCount(); ++i) {
                     Uri uri = clipData.getItemAt(i).getUri();
-                    File file = FileHelper.pickedExistingPicture(activity, uri);
+                    File file = FileHelper.pickedExistingPicture(fileConfiguration, uri);
                     files.add(file);
                 }
             }
 
             // Kopiere das File in den external storrage
             if (copyPickedImagesToPublicGallery) {
-                FileHelper.copyFilesInSeparateThread(activity, files);
+                FileHelper.copyFilesInSeparateThread(fileConfiguration, files);
             }
 
             callbacks.onImagesPicked(files, ImageSource.GALLERY, 0);
@@ -269,7 +269,7 @@ public class CameraHelper {
     private static void onPictureReturnedFromCamera(Activity activity, @NonNull Callbacks callbacks) {
         try {
             List<File> files = new ArrayList();
-            File photoFile = FileHelper.getCameraTempFile(activity.getApplicationContext());
+            File photoFile = FileHelper.getCameraTempFile(fileConfiguration);
             if (photoFile == null) {
                 //TODO exception message
                 callbacks.onImagePickerError(new Exception("Unable to get the picture returned from camera"), ImageSource.CAMERA_IMAGE, 0);
@@ -281,7 +281,7 @@ public class CameraHelper {
                 files.add(photoFile);
                 // Kopiere das File in den external storrage
                 if (copyPickedImagesToPublicGallery) {
-                    FileHelper.copyFilesInSeparateThread(activity, files);
+                    FileHelper.copyFilesInSeparateThread(fileConfiguration, files);
                 }
                 callbacks.onImagesPicked(files, ImageSource.CAMERA_IMAGE, 0);
             }
@@ -319,10 +319,13 @@ public class CameraHelper {
      */
     public static final class Configuration {
         private Activity activity;
+        private FileConfiguration fileConfiguration;
 
         public Configuration(@NonNull Activity activity) {
             this.activity = activity;
             context = activity;
+            fileConfiguration = new FileConfiguration(context);
+            CameraHelper.fileConfiguration = fileConfiguration;
         }
 
         /**
@@ -377,7 +380,7 @@ public class CameraHelper {
          * @return
          */
         public Configuration filePath(String filePath) {
-            FileHelper.configuration(context).folderPath(filePath);
+            fileConfiguration.folderPath(filePath);
             return this;
         }
 
@@ -388,7 +391,7 @@ public class CameraHelper {
          * @return
          */
         public Configuration imageFilename(String filename) {
-            FileHelper.configuration(context).imageFileName(filename);
+            fileConfiguration.imageFileName(filename);
             setAutoImageFileName(false);
             return this;
         }
@@ -400,7 +403,7 @@ public class CameraHelper {
          * @return
          */
         public Configuration setAutoImageFileName(boolean autoImageFileName) {
-            FileHelper.configuration(context).setAutoImageFileName(autoImageFileName);
+            fileConfiguration.setAutoImageFileName(autoImageFileName);
             return this;
         }
 
@@ -411,7 +414,7 @@ public class CameraHelper {
          * @return
          */
         public Configuration writeToExternalStorrage(boolean writeToExternalStorrage) {
-            FileHelper.configuration(context).writeToExternalStorrage(writeToExternalStorrage);
+            fileConfiguration.writeToExternalStorrage(writeToExternalStorrage);
             return this;
         }
 
@@ -434,7 +437,7 @@ public class CameraHelper {
          * @return
          */
         public Configuration environment(String environment) {
-            FileHelper.configuration(context).environment(environment);
+            fileConfiguration.environment(environment);
             return this;
         }
 
@@ -445,7 +448,7 @@ public class CameraHelper {
          * @return
          */
         public Configuration suffix(String suffix) {
-            FileHelper.configuration(context).suffix(suffix);
+            fileConfiguration.suffix(suffix);
             return this;
         }
 
