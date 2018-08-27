@@ -20,6 +20,10 @@ import es.dmoral.toasty.Toasty;
 
 public class Permissions {
 
+    /**
+     * TODO Permissions muss komplett überarbeitet werden und allgemein gestalltet werden um alle Permissions in einer Klasse abfragen zu können
+     */
+
     public static final int REQUEST_EXTERNAL_STORAGE = 0;
     public static final int REQUEST_READ_EXTERNAL_STORAGE = 1;
     public static final int REQUEST_WRITE_EXTERNAL_STORAGE = 2;

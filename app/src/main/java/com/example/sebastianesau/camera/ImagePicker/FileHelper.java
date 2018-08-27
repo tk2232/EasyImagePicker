@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera;
+package com.example.sebastianesau.camera.ImagePicker;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -9,8 +9,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
-
-import com.example.sebastianesau.camera.ImagePicker.FileConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,50 +26,6 @@ import java.util.UUID;
 public class FileHelper {
 
     private static final String TAG = FileHelper.class.getSimpleName();
-
-//    /**
-//     * Coniguration
-//     */
-//    private static String EXTERNAL_FOLDER_PATH_DEFAULT;
-//
-//    /**
-//     * DIRECTORY_MUSIC
-//     * DIRECTORY_PODCASTS
-//     * DIRECTORY_RINGTONES
-//     * DIRECTORY_ALARMS
-//     * DIRECTORY_NOTIFICATIONS
-//     * DIRECTORY_PICTURES damit gibt es probleme beim auslesen onActivityResult
-//     * DIRECTORY_MOVIES
-//     * DIRECTORY_DOWNLOADS
-//     * DIRECTORY_DCIM
-//     * DIRECTORY_DOCUMENTS
-//     */
-//    private static String ENVIRONMENT_DEFAULT = Environment.DIRECTORY_DCIM;
-//    private static final boolean CREATE_TEMP_FILE_DEFAULT = true;
-//    private static final String SUFFIX_DEFAULT = ".jpg";
-//    private static final boolean AUTO_IMAGE_FILE_NAME_DEFAULT = true;
-//    private static String INERNAL_IMAGE_TEMP_FILE;
-//    private static final String PRIVATE_TEMP_FILE_CHILD_DEFAULT = "ImageTemp";
-//
-//
-//    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
-//    private static String folderPath;
-//    private static String imageFileName;
-//    private static boolean autoImageFileName;
-//    private static String environment;
-//    private static boolean createTempFile;
-//    private static String suffix;
-//    private static boolean writeToExternalStorrage = true;
-
-
-//    private static Context context;
-
-//    private static FileConfiguration configuration;
-//    private static boolean hasConfig;
-
-//    private static Configuration getConfiguration(Context context) {
-//        return new Configuration(context);
-//    }
 
     /**
      * Erstellt ein im internal storrage ein Tempfile
@@ -329,7 +283,6 @@ public class FileHelper {
         }
         return false;
     }
-    //TODO einbauen
 
     /**
      * Test if we can open the given Android URI to test if permission required error is thrown.<br>
@@ -360,8 +313,4 @@ public class FileHelper {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSS").format(new Date());
         return config.getSuffix().toUpperCase() + "_" + timeStamp + "_";
     }
-
-//    public static Configuration configuration(Context context) {
-//        return configuration == null ? getConfiguration(context) : configuration;
-//    }
 }

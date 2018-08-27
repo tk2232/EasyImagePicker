@@ -36,7 +36,6 @@ public class FileConfiguration {
     private static final String PRIVATE_TEMP_FILE_PATH_CHILD_DEFAULT = "ImageTemp";
     private static final boolean WRITE_TO_EXTERNAL_STORRAGE_DEFAULT = true;
 
-    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
     private static String folderPath;
     private static String environment;
     private static boolean createTempFile;
@@ -128,6 +127,7 @@ public class FileConfiguration {
         return environment;
     }
 
+    @Deprecated
     public static boolean isCreateTempFile() {
         return createTempFile;
     }

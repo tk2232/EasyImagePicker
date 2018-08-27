@@ -13,15 +13,14 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
-
-import com.example.sebastianesau.camera.FileHelper;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CameraHelper {
+public class PickImage {
 
     /**
      * startActivityForResult requestCode
@@ -45,7 +44,7 @@ public class CameraHelper {
      * @param context used to access Android APIs, like content resolve, it is your
      *                activity/fragment/widget.
      */
-    public CameraHelper(Context context) {
+    public PickImage(Context context) {
         this.context = context;
     }
 
@@ -296,20 +295,20 @@ public class CameraHelper {
         }
     }
 
+    /**
+     * Prüfe ob genug speicher auf dem internal und dem external storrage vorhanden ist
+     *
+     * @return
+     */
+    private static boolean checkSpace() {
+        //TODO memory < device memory toast
+        Toast.makeText(context, "Test not enough space", Toast.LENGTH_LONG).show();
+        //TODO check space
+        return true;
+    }
+
     public static CharSequence getTitle() {
         return title;
-    }
-
-    public static boolean isIncludeCamera() {
-        return includeCamera;
-    }
-
-    public static boolean isIncludeDocuments() {
-        return includeDocuments;
-    }
-
-    public static boolean isIncludeMultipleSelect() {
-        return includeMultipleSelect;
     }
 
     /**
@@ -325,14 +324,18 @@ public class CameraHelper {
             this.activity = activity;
             context = activity;
             fileConfiguration = new FileConfiguration(context);
-            CameraHelper.fileConfiguration = fileConfiguration;
+            PickImage.fileConfiguration = fileConfiguration;
         }
 
         /**
          * Starte das chooser Intent
          */
         public void start() {
-            CameraHelper.start(activity);
+            if (!checkSpace()) {
+                //TODO string.xml
+                return;
+            }
+            PickImage.start(activity);
         }
 
         /**
@@ -340,17 +343,17 @@ public class CameraHelper {
          * @return Configuration
          */
         public Configuration title(CharSequence title) {
-            CameraHelper.title = title;
+            PickImage.title = title;
             return this;
         }
 
         public Configuration includeCamera(boolean includeCamera) {
-            CameraHelper.includeCamera = includeCamera;
+            PickImage.includeCamera = includeCamera;
             return this;
         }
 
         public Configuration includeDocuments(boolean includeDocuments) {
-            CameraHelper.includeDocuments = includeDocuments;
+            PickImage.includeDocuments = includeDocuments;
             return this;
         }
 
@@ -359,7 +362,7 @@ public class CameraHelper {
          * @return
          */
         public Configuration includeMultipleSelect(boolean includeMultipleSelect) {
-            CameraHelper.includeMultipleSelect = includeMultipleSelect;
+            PickImage.includeMultipleSelect = includeMultipleSelect;
             return this;
         }
 
@@ -369,7 +372,8 @@ public class CameraHelper {
          * @return
          */
         public Configuration shouldCopyPickedImagesToPublicGalleryAppFolder(boolean copyPickedImagesToPublicGallery) {
-            CameraHelper.copyPickedImagesToPublicGallery = copyPickedImagesToPublicGallery;
+            PickImage.copyPickedImagesToPublicGallery = copyPickedImagesToPublicGallery;
+            fileConfiguration.writeToExternalStorrage(copyPickedImagesToPublicGallery);
             return this;
         }
 
@@ -407,16 +411,6 @@ public class CameraHelper {
             return this;
         }
 
-        /**
-         * default writeToExternalStorrage = true
-         *
-         * @param writeToExternalStorrage
-         * @return
-         */
-        public Configuration writeToExternalStorrage(boolean writeToExternalStorrage) {
-            fileConfiguration.writeToExternalStorrage(writeToExternalStorrage);
-            return this;
-        }
 
         /**
          * defautl environment = DIRECTORY_DCIM
@@ -451,10 +445,5 @@ public class CameraHelper {
             fileConfiguration.suffix(suffix);
             return this;
         }
-
-//        public Configuration createTempFile(boolean createTempFile) {
-//            FileHelper.configuration(context).createTempFile(createTempFile);
-//            return this;
-//        }
     }
 }
