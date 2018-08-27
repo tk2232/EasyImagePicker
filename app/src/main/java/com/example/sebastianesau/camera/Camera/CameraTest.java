@@ -11,11 +11,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
-import com.example.sebastianesau.camera.CameraHelper;
-import com.example.sebastianesau.camera.MainActivity;
+import com.example.sebastianesau.camera.ImagePicker.CameraHelper;
 import com.example.sebastianesau.camera.Permissions;
 import com.example.sebastianesau.camera.R;
-import com.theartofdev.edmodo.cropper.CropImage;
 
 import pl.aprilapps.easyphotopicker.EasyImage;
 

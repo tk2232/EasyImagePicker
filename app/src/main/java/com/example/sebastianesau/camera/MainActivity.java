@@ -1,36 +1,22 @@
 package com.example.sebastianesau.camera;
 
-import android.content.ClipData;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Environment;
-import android.os.Parcelable;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Toast;
 
-import com.theartofdev.edmodo.cropper.CropImage;
-import com.theartofdev.edmodo.cropper.CropImageView;
+import com.example.sebastianesau.camera.ImagePicker.Callbacks;
+import com.example.sebastianesau.camera.ImagePicker.CameraHelper;
+import com.example.sebastianesau.camera.ImagePicker.ImageSource;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 import pl.aprilapps.easyphotopicker.DefaultCallback;
@@ -93,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             requestCode = PICK_IMAGE_MULTIPLE_REQUEST;
         }
 //        EasyImage.openChooserWithGallery(this, "", 0);
-//        EasyImage
+        //TODO space und storrage isReadable/isWritable
         CameraHelper
                 .activity(this)
                 .includeCamera(true)
@@ -106,21 +92,25 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        CameraHelper.handleActivityResult(requestCode, resultCode, data, this, new CameraHelper.DefaultCallback() {
+        CameraHelper.handleActivityResult(requestCode, resultCode, data, this, new Callbacks() {
             @Override
-            public void onImagesPicked(@NonNull List<File> var1, CameraHelper.ImageSource var2, int var3) {
-                Uri uri = Uri.fromFile(var1.get(0));
+            public void onImagesPicked(@NonNull List<File> files, ImageSource imageSource, int type) {
+                Uri uri = Uri.fromFile(files.get(0));
                 mImageView.setImageURI(null);
                 mImageView.setImageURI(uri);
                 System.out.println();
             }
 
             @Override
-            public void onImagePickerError(Exception e, CameraHelper.ImageSource source, int type) {
-                super.onImagePickerError(e, source, type);
+            public void onCanceled(ImageSource imageSource, int type) {
+
+            }
+
+            @Override
+            public void onImagePickerError(Exception e, ImageSource imageSource, int type) {
+
             }
         });
-
 
         EasyImage.handleActivityResult(requestCode, resultCode, data, this, new DefaultCallback() {
             @Override
@@ -134,92 +124,6 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println();
             }
         });
-    }
-
-    private void resultSingleImage(Intent data) {
-        Bitmap bitmap;
-        Bundle extras = data.getExtras();
-//                    Bitmap imageBitmap = (Bitmap) extras.get("data");
-//                    mImageView.setImageBitmap(imageBitmap);
-//                    return;
-        try {
-            picUri = mCameraHelper.getPickImageResultUri(data);
-        } catch (IOException io) {
-            Log.e(this.getClass().getSimpleName(), io.getMessage(), io);
-        }
-        if (picUri != null) {
-            try {
-                myBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), picUri);
-//                            myBitmap = rotateImageIfRequired(myBitmap, picUri);
-//                            myBitmap = getResizedBitmap(myBitmap, 500);
-
-//                            CircleImageView croppedImageView = (CircleImageView) findViewById(R.id.img_profile);
-//                            croppedImageView.setImageBitmap(myBitmap);
-                mImageView.setImageBitmap(myBitmap);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else if (data != null) {
-            bitmap = (Bitmap) data.getExtras().get("data");
-//
-            myBitmap = bitmap;
-////                        CircleImageView croppedImageView = (CircleImageView) findViewById(R.id.img_profile);
-////                        if (croppedImageView != null) {
-////                            croppedImageView.setImageBitmap(myBitmap);
-////                        }
-//
-            mImageView.setImageBitmap(myBitmap);
-        } else {
-            //TODO error data is null
-        }
-        Toast.makeText(MainActivity.this, "finish", Toast.LENGTH_LONG).show();
-    }
-
-    private void resultMultipleImage(Intent data) {
-        // Get the Image from data
-
-        String[] filePathColumn = {MediaStore.Images.Media.DATA};
-        List imagesEncodedList = new ArrayList<String>();
-        String imageEncoded;
-        ClipData d = data.getClipData();
-        if (data.getData() != null && data.getClipData() != null && data.getClipData().getItemCount() == 1) {
-
-            Uri mImageUri = data.getData();
-
-            // Get the cursor
-            Cursor cursor = getContentResolver().query(mImageUri,
-                    filePathColumn, null, null, null);
-            // Move to first row
-            cursor.moveToFirst();
-
-            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-            imageEncoded = cursor.getString(columnIndex);
-            cursor.close();
-
-        } else {
-            if (data.getClipData() != null) {
-                ClipData mClipData = data.getClipData();
-                ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
-                for (int i = 0; i < mClipData.getItemCount(); i++) {
-
-                    ClipData.Item item = mClipData.getItemAt(i);
-                    Uri uri = item.getUri();
-                    mArrayUri.add(uri);
-                    // Get the cursor
-                    Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
-                    // Move to first row
-                    cursor.moveToFirst();
-
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    imageEncoded = cursor.getString(columnIndex);
-                    imagesEncodedList.add(imageEncoded);
-                    cursor.close();
-
-                }
-                Log.v("LOG_TAG", "Selected Images" + mArrayUri.size());
-            }
-        }
     }
 
     @Override

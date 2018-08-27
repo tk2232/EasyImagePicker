@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera;
+package com.example.sebastianesau.camera.ImagePicker;
 
 import android.app.Activity;
 import android.content.ClipData;
@@ -14,6 +14,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.example.sebastianesau.camera.FileHelper;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,18 +23,21 @@ import java.util.List;
 
 public class CameraHelper {
 
+    /**
+     * startActivityForResult requestCode
+     */
     private final static int PICK_IMAGE_REQUEST = 0;
-    private final static int PICK_IMAGE_MULTIPLE_REQUEST = 1;
 
-    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
-
-    private static File file;
+    /**
+     * Defaults
+     */
     private static CharSequence title = "";
     private static boolean includeCamera = false;
     private static boolean includeDocuments = false;
     private static boolean includeMultipleSelect = false;
     private static boolean copyPickedImagesToPublicGallery = true;
 
+    private static File file;
     private static Context context;
 
     /**
@@ -44,11 +49,23 @@ public class CameraHelper {
     }
 
 
+    /**
+     * Configuration Klasse ist unten eingefügt.
+     *
+     * @param activity um startActivityForResult aufrufen zu können
+     * @return eine neue Coniguration entweder mit default Werten oder den Benutzerdaten
+     */
     public static Configuration activity(Activity activity) {
         return new Configuration(activity);
     }
 
-    public static void start(@NonNull Activity activity) {
+    /**
+     * Diese Methode kann nur aus der Coniguration Klasse aufgerufen werden um zu gewährleisten
+     * das die default configuration durchgeführt wurde.
+     *
+     * @param activity um startActivityForResult aufrufen zu können
+     */
+    private static void start(@NonNull Activity activity) {
         try {
             activity.startActivityForResult(getPickImageChooserIntent(), PICK_IMAGE_REQUEST);
         } catch (IOException io) {
@@ -105,13 +122,9 @@ public class CameraHelper {
     private static List<Intent> getCameraIntents(@NonNull PackageManager packageManager) throws IOException {
         List<Intent> allIntents = new ArrayList<>();
 
-        // Determine Uri of camera image to  save.
-//        Uri outputFileUri = getCaptureImageOutputUri();
-//        Uri imageUri = FileProvider.getUriForFile(context, "your/path/", FileHelper.getFileFromProvider(context));
-
+        // Determine Uri of camera image to  save. (TempFile)
         File imagePath = FileHelper.getCameraTempFile(context);
         Uri uri = FileHelper.getUriToFile(context, imagePath);
-
 
         Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         List<ResolveInfo> listCam = packageManager.queryIntentActivities(captureIntent, 0);
@@ -124,7 +137,6 @@ public class CameraHelper {
             }
             allIntents.add(intent);
         }
-
         return allIntents;
     }
 
@@ -137,9 +149,7 @@ public class CameraHelper {
         List<Intent> intents = new ArrayList<>();
         Intent galleryIntent = action == Intent.ACTION_GET_CONTENT ? new Intent(action) : new Intent(action, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryIntent.setType("image/*");
-        if (includeMultipleSelect) {
-            galleryIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        }
+        galleryIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, includeMultipleSelect);
         List<ResolveInfo> listGallery = packageManager.queryIntentActivities(galleryIntent, 0);
         for (ResolveInfo res : listGallery) {
             Intent intent = new Intent(galleryIntent);
@@ -166,18 +176,15 @@ public class CameraHelper {
     /**
      * Get URI to image received from capture by camera.
      */
-    private static Uri getCaptureImageOutputUri() throws IOException, NullPointerException {
+    private static Uri getCaptureImageOutputUri() throws IOException {
         file = FileHelper.tempCacheImageDirectory(context);
-        try {
-            Uri uri = Uri.fromFile(file);
-            return uri;
-        } catch (NullPointerException e) {
-            //TODO
-            Log.e(context.getClass().getSimpleName(), e.getMessage(), e);
-            return null;
-        }
+        Uri uri = Uri.fromFile(file);
+        return uri;
     }
 
+    /**
+     * @return the romovestate
+     */
     public static boolean deleteFile() {
         return FileHelper.removeFile(file);
     }
@@ -188,6 +195,7 @@ public class CameraHelper {
      *
      * @param data the returned data of the activity result
      */
+    @Deprecated
     public static Uri getPickImageResultUri(@Nullable Intent data) throws IOException {
         boolean isCamera = true;
         if (data != null && data.getData() != null) {
@@ -197,6 +205,16 @@ public class CameraHelper {
         return isCamera || data.getData() == null ? getCaptureImageOutputUri() : data.getData();
     }
 
+    /**
+     * Diese Methode wird in der aufrufenden Activity in onActivityResult aufgerufen damit kein
+     * überladener Code entsteht.
+     *
+     * @param requestCode 0 == PICK_IMAGE_REQUEST
+     * @param resultCode  -1 == RESULT_OK, 0 == RESULT_CANCELED
+     * @param data        Result data
+     * @param activity    calling activity
+     * @param callbacks   Interface
+     */
     public static void handleActivityResult(int requestCode, int resultCode, Intent data, Activity activity, Callbacks callbacks) {
         if (requestCode == PICK_IMAGE_REQUEST) {
             if (resultCode == Activity.RESULT_OK) {
@@ -235,6 +253,7 @@ public class CameraHelper {
                 }
             }
 
+            // Kopiere das File in den external storrage
             if (copyPickedImagesToPublicGallery) {
                 FileHelper.copyFilesInSeparateThread(activity, files);
             }
@@ -260,6 +279,7 @@ public class CameraHelper {
                 callbacks.onImagePickerError(e, ImageSource.CAMERA_IMAGE, 0);
             } else {
                 files.add(photoFile);
+                // Kopiere das File in den external storrage
                 if (copyPickedImagesToPublicGallery) {
                     FileHelper.copyFilesInSeparateThread(activity, files);
                 }
@@ -292,18 +312,30 @@ public class CameraHelper {
         return includeMultipleSelect;
     }
 
+    /**
+     * Hier kann die Default config geändert werden. In der Configuration Klasse wird auch auf die
+     *
+     * @FileHelper Configuration zugegriffen. In dieser Klasse kann der chooser gestartet werden.
+     */
     public static final class Configuration {
-        Activity activity;
+        private Activity activity;
 
         public Configuration(@NonNull Activity activity) {
             this.activity = activity;
             context = activity;
         }
 
+        /**
+         * Starte das chooser Intent
+         */
         public void start() {
             CameraHelper.start(activity);
         }
 
+        /**
+         * @param title Bootomsheet title
+         * @return Configuration
+         */
         public Configuration title(CharSequence title) {
             CameraHelper.title = title;
             return this;
@@ -319,78 +351,107 @@ public class CameraHelper {
             return this;
         }
 
+        /**
+         * @param includeMultipleSelect erlaubt es mehrere Bilder aus der Gallerie auszuwählen.
+         * @return
+         */
         public Configuration includeMultipleSelect(boolean includeMultipleSelect) {
             CameraHelper.includeMultipleSelect = includeMultipleSelect;
             return this;
         }
 
+        /**
+         * @param copyPickedImagesToPublicGallery erlaubt es die Bilder auf den öffentlichen Ordner zu
+         *                                        speichern damit andere Apps die Bilder finden können
+         * @return
+         */
         public Configuration shouldCopyPickedImagesToPublicGalleryAppFolder(boolean copyPickedImagesToPublicGallery) {
             CameraHelper.copyPickedImagesToPublicGallery = copyPickedImagesToPublicGallery;
             return this;
         }
 
+        /**
+         * Default filePath = appname
+         *
+         * @param filePath
+         * @return
+         */
         public Configuration filePath(String filePath) {
             FileHelper.configuration(context).folderPath(filePath);
             return this;
         }
 
-        public Configuration imageFileName(String fileName) {
-            FileHelper.configuration(context).imageFileName(fileName);
+        /**
+         * Default imageFilename suffix.toUpperCase() + "_" + timeStamp + "_" + suffix
+         *
+         * @param filename der filename kann manuell gewählt werden oder Automatisch erstellt werden
+         * @return
+         */
+        public Configuration imageFilename(String filename) {
+            FileHelper.configuration(context).imageFileName(filename);
+            setAutoImageFileName(false);
             return this;
         }
 
+        /**
+         * imageFilename auto == suffix.toUpperCase() + "_" + timeStamp + "_" + suffix
+         *
+         * @param autoImageFileName
+         * @return
+         */
+        public Configuration setAutoImageFileName(boolean autoImageFileName) {
+            FileHelper.configuration(context).setAutoImageFileName(autoImageFileName);
+            return this;
+        }
+
+        /**
+         * default writeToExternalStorrage = true
+         *
+         * @param writeToExternalStorrage
+         * @return
+         */
         public Configuration writeToExternalStorrage(boolean writeToExternalStorrage) {
             FileHelper.configuration(context).writeToExternalStorrage(writeToExternalStorrage);
             return this;
         }
 
+        /**
+         * defautl environment = DIRECTORY_DCIM
+         *
+         * @param environment DIRECTORY_MUSIC
+         *                    DIRECTORY_PODCASTS
+         *                    DIRECTORY_RINGTONES
+         *                    DIRECTORY_ALARMS
+         *                    DIRECTORY_NOTIFICATIONS
+         *                    DIRECTORY_PICTURES damit gibt es probleme beim auslesen onActivityResult.
+         *                    bei manchen devices ist der Zugriff nicht erlaubt. Besser
+         *                    DIRECTORY_DCIM wählen
+         *                    <p>
+         *                    DIRECTORY_MOVIES
+         *                    DIRECTORY_DOWNLOADS
+         *                    DIRECTORY_DCIM
+         *                    DIRECTORY_DOCUMENTS
+         * @return
+         */
         public Configuration environment(String environment) {
             FileHelper.configuration(context).environment(environment);
             return this;
         }
 
-        public Configuration createTempFile(boolean createTempFile) {
-            FileHelper.configuration(context).createTempFile(createTempFile);
-            return this;
-        }
-
+        /**
+         * default suffix = .jpg
+         *
+         * @param suffix z.Bsp. .jpg, .PNG
+         * @return
+         */
         public Configuration suffix(String suffix) {
             FileHelper.configuration(context).suffix(suffix);
             return this;
         }
 
-        public Configuration setAutoImageFileName(boolean autoImageFileName) {
-            FileHelper.configuration(context).setAutoImageFileName(autoImageFileName);
-            return this;
-        }
-    }
-
-    public interface Callbacks {
-        void onImagePickerError(Exception var1, ImageSource var2, int var3);
-
-        void onImagesPicked(@NonNull List<File> var1, ImageSource var2, int var3);
-
-        void onCanceled(ImageSource var1, int var2);
-    }
-
-    public static enum ImageSource {
-        GALLERY,
-        DOCUMENTS,
-        CAMERA_IMAGE,
-        CAMERA_VIDEO;
-
-        private ImageSource() {
-        }
-    }
-
-    public abstract static class DefaultCallback implements Callbacks {
-        public DefaultCallback() {
-        }
-
-        public void onImagePickerError(Exception e, ImageSource source, int type) {
-        }
-
-        public void onCanceled(ImageSource source, int type) {
-        }
+//        public Configuration createTempFile(boolean createTempFile) {
+//            FileHelper.configuration(context).createTempFile(createTempFile);
+//            return this;
+//        }
     }
 }

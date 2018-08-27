@@ -32,6 +32,7 @@ public class FileHelper {
      * Coniguration
      */
     private static String EXTERNAL_FOLDER_PATH_DEFAULT;
+
     /**
      * DIRECTORY_MUSIC
      * DIRECTORY_PODCASTS
@@ -51,20 +52,21 @@ public class FileHelper {
     private static String INERNAL_IMAGE_TEMP_FILE;
     private static final String PRIVATE_TEMP_FILE_CHILD_DEFAULT = "ImageTemp";
 
-    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
 
+    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.sebastianesau.fileprovider";
     private static String folderPath;
     private static String imageFileName;
     private static boolean autoImageFileName;
     private static String environment;
     private static boolean createTempFile;
     private static String suffix;
-
     private static boolean writeToExternalStorrage = true;
+
+
     private static Context context;
 
     private static Configuration configuration;
-    private static boolean hasConfig;
+//    private static boolean hasConfig;
 
     private static Configuration getConfiguration(Context context) {
         return new Configuration(context);
@@ -78,8 +80,6 @@ public class FileHelper {
         writeToFile(pictureInputStream, photoFile);
         return photoFile;
     }
-
-    private final static String DEFAULT_FOLDER_NAME = "EasyImage";
 
     public static File getTempFileTest(Context context) {
         File privateTempDir = new File(context.getCacheDir(), PRIVATE_TEMP_FILE_CHILD_DEFAULT);
@@ -168,7 +168,7 @@ public class FileHelper {
         return extension;
     }
 
-    static void copyFilesInSeparateThread(final Context context, final List<File> filesToCopy) {
+    public static void copyFilesInSeparateThread(final Context context, final List<File> filesToCopy) {
         (new Thread(new Runnable() {
             public void run() {
                 List<File> copiedFiles = new ArrayList();
@@ -221,6 +221,7 @@ public class FileHelper {
         });
     }
 
+    @Deprecated
     public static File getTempImageFile(@NonNull Context context) throws IOException {
         configuration(context);
         if (writeToExternalStorrage) {
@@ -236,6 +237,7 @@ public class FileHelper {
         return null;
     }
 
+    @Deprecated
     public static File getImageFile(Context context) throws IOException {
         configuration(context);
         // Create an image file name
