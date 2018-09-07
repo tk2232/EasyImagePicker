@@ -1,9 +1,9 @@
 # Camera
 
 
-Install:
+## Install:
 
-```
+```java
 allprojects {
 		repositories {
 			...
@@ -18,19 +18,19 @@ dependencies {
 	}
 ```
 
-Example:
+### Example:
 
-First Check read/write permissions in activity and manifest
+First Check read/write permissions in activity and manifest<br/>
 
 Manifest:
-```
+```java
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 ```
     
-Activity:
-
+### Activity:
+```java
         PickImage
                 .activity(this)
                 .includeCamera(true)
@@ -38,9 +38,9 @@ Activity:
                 .includeMultipleSelect(false)
                 .logCallback(imageLogCallback)
                 .start();
-
-onActivityResult:
 ```
+#### onActivityResult
+```java
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -64,8 +64,8 @@ onActivityResult:
         });
     }
 ```
-ImageLogCallback
-```
+#### ImageLogCallback
+```java
    ImageLogCallback imageLogCallback = new ImageLogCallback() {
         @Override
         public void log(String tag, String msg, Throwable tr) {
