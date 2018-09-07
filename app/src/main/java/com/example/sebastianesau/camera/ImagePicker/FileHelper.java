@@ -63,6 +63,7 @@ public class FileHelper {
     public static Uri getUriToFile(@NonNull FileConfiguration config, @NonNull File file) {
         String packageName = config.getContext().getApplicationContext().getPackageName();
         String authority = packageName + ".fileprovider";
+
         return FileProvider.getUriForFile(config.getContext(), authority, file);
     }
 
@@ -186,7 +187,7 @@ public class FileHelper {
                 File file = new File(config.getContext().getFilesDir(), config.getInternalImageFilename() + config.getSuffix());
                 return file;
             } else {
-                CLog.e(TAG, "getTempImageFile read/write error");
+                log(config, TAG, "getTempImageFile read/write error");
             }
         } else {
 
@@ -201,7 +202,7 @@ public class FileHelper {
             if (isExternalStorageReadable() && isExternalStorageWritable()) {
                 return createImageFile(config);
             } else {
-                CLog.e(TAG, "getTempImageFile read/write error");
+                log(config, TAG, "getTempImageFile read/write error");
             }
         } else {
 
@@ -276,7 +277,7 @@ public class FileHelper {
                 }
             }
         } catch (NullPointerException e) {
-            CLog.e(config.getContext().getClass().getSimpleName(), e.getMessage(), e);
+            log(config, config.getContext().getClass().getSimpleName(), e.getMessage(), e);
         }
         return false;
     }
@@ -310,4 +311,21 @@ public class FileHelper {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSS").format(new Date());
         return config.getSuffix().toUpperCase() + "_" + timeStamp + "_";
     }
+
+    private static void log(FileConfiguration conf, String tag, String msg, Throwable tr) {
+        if (conf.getImageLogCallback() == null) {
+            Log.e(tag, msg, tr);
+        } else {
+            conf.getImageLogCallback().log(tag, msg, tr);
+        }
+    }
+
+    private static void log(FileConfiguration conf, String tag, String msg) {
+        if (conf.getImageLogCallback() == null) {
+            Log.e(tag, msg);
+        } else {
+            conf.getImageLogCallback().log(tag, msg);
+        }
+    }
+
 }

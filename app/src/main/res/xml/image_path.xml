@@ -11,4 +11,7 @@
     <external-files-path
         name="temp"
         path="ImageTemp" />
+    <root-path
+        name="root"
+        path="." />
 </paths>

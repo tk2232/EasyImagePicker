@@ -7,6 +7,8 @@ import java.io.File;
 
 public class Storrage {
 
+    //TODO testen mit File.getUsableSpace()
+
     public static boolean isExternalStorrageReady() {
         return isExternalStorageAvailable() && !isExternalStorageReadOnly();
     }

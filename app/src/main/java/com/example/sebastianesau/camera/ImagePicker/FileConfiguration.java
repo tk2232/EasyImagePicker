@@ -9,12 +9,12 @@ import com.example.sebastianesau.camera.R;
 
 public class FileConfiguration {
 
-    private static String TAG;
+    private String TAG;
 
     /**
      * Coniguration
      */
-    private static String EXTERNAL_FOLDER_PATH_DEFAULT;
+    private String EXTERNAL_FOLDER_PATH_DEFAULT;
 
     /**
      * DIRECTORY_MUSIC
@@ -28,24 +28,24 @@ public class FileConfiguration {
      * DIRECTORY_DCIM
      * DIRECTORY_DOCUMENTS
      */
-    private static final String ENVIRONMENT_DEFAULT = Environment.DIRECTORY_DCIM;
-    private static final boolean CREATE_TEMP_FILE_DEFAULT = true;
-    private static final String SUFFIX_DEFAULT = ".jpg";
-    private static final boolean AUTO_IMAGE_FILE_NAME_DEFAULT = true;
-    private static String INERNAL_IMAGE_TEMP_FILENAME_DEFAULT;
-    private static final String PRIVATE_TEMP_FILE_PATH_CHILD_DEFAULT = "ImageTemp";
-    private static final boolean WRITE_TO_EXTERNAL_STORRAGE_DEFAULT = true;
+    private final String ENVIRONMENT_DEFAULT = Environment.DIRECTORY_DCIM;
+    private final boolean CREATE_TEMP_FILE_DEFAULT = true;
+    private final String SUFFIX_DEFAULT = ".jpg";
+    private final boolean AUTO_IMAGE_FILE_NAME_DEFAULT = true;
+    private String INERNAL_IMAGE_TEMP_FILENAME_DEFAULT = "tempImage";
+    private final String PRIVATE_TEMP_FILE_PATH_CHILD_DEFAULT = "ImageTemp";
+    private final boolean WRITE_TO_EXTERNAL_STORRAGE_DEFAULT = true;
 
-    private static String folderPath;
-    private static String environment;
-    private static boolean createTempFile;
-    private static boolean autoImageFileName;
-    private static String internalImageFilename;
-    private static String privateTempFilePathChild;
-    private static String imageFileName;
-    private static String suffix;
-    private static boolean writeToExternalStorrage;
-    private static LogCallback logCallback;
+    private String folderPath;
+    private String environment;
+    private boolean createTempFile;
+    private boolean autoImageFileName;
+    private String internalImageFilename;
+    private String privateTempFilePathChild;
+    private String imageFileName;
+    private String suffix;
+    private boolean writeToExternalStorrage;
+    private ImageLogCallback imageLogCallback;
 
     private Context context;
 
@@ -53,7 +53,6 @@ public class FileConfiguration {
         this.context = context;
         TAG = context.getClass().getSimpleName();
         EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString();
-        INERNAL_IMAGE_TEMP_FILENAME_DEFAULT = context.getClass().getSimpleName();
         setDefaultConfig();
     }
 
@@ -67,7 +66,7 @@ public class FileConfiguration {
         suffix = SUFFIX_DEFAULT;
         writeToExternalStorrage = WRITE_TO_EXTERNAL_STORRAGE_DEFAULT;
         imageFileName = "";
-        logCallback = null;
+        imageLogCallback = null;
     }
 
     public FileConfiguration folderPath(String folderPath) {
@@ -116,53 +115,57 @@ public class FileConfiguration {
         return this;
     }
 
-    public FileConfiguration logCallback(LogCallback logCallback) {
-        this.logCallback = logCallback;
+    public FileConfiguration logCallback(ImageLogCallback imageLogCallback) {
+        this.imageLogCallback = imageLogCallback;
         return this;
     }
 
-    public static String getTAG() {
+    public String getTAG() {
         return TAG;
     }
 
-    public static String getFolderPath() {
+    public String getFolderPath() {
         return folderPath;
     }
 
-    public static String getEnvironment() {
+    public String getEnvironment() {
         return environment;
     }
 
     @Deprecated
-    public static boolean isCreateTempFile() {
+    public boolean isCreateTempFile() {
         return createTempFile;
     }
 
-    public static boolean isAutoImageFileName() {
+    public boolean isAutoImageFileName() {
         return autoImageFileName;
     }
 
-    public static String getInternalImageFilename() {
+    public String getInternalImageFilename() {
         return internalImageFilename;
     }
 
-    public static String getPrivateTempFilePathChild() {
+    public String getPrivateTempFilePathChild() {
         return privateTempFilePathChild;
     }
 
-    public static String getImageFileName() {
+    public String getImageFileName() {
         return imageFileName;
     }
 
-    public static String getSuffix() {
+    public String getSuffix() {
         return suffix;
     }
 
-    public static boolean isWriteToExternalStorrage() {
+    public boolean isWriteToExternalStorrage() {
         return writeToExternalStorrage;
     }
 
     public Context getContext() {
         return context;
+    }
+
+    public ImageLogCallback getImageLogCallback() {
+        return imageLogCallback;
     }
 }

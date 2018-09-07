@@ -43,7 +43,7 @@ public class PickImage {
     private static File file;
     private static FileConfiguration fileConfiguration;
     private static Context context;
-    private static LogCallback logCallback;
+    private static ImageLogCallback imageLogCallback;
 
     /**
      * @param context used to access Android APIs, like content resolve, it is your
@@ -73,7 +73,7 @@ public class PickImage {
         try {
             activity.startActivityForResult(getPickImageChooserIntent(), PICK_IMAGE_REQUEST);
         } catch (IOException io) {
-            log.e(activity.getClass().getSimpleName(), io.getMessage(), io);
+            log(activity.getClass().getSimpleName(), io.getMessage(), io);
         }
     }
 
@@ -210,13 +210,13 @@ public class PickImage {
     }
 
     /**
-     * Logt auf der Console wenn kein LogCallback angegeben wurde.
+     * Logt auf der Console wenn kein ImageLogCallback angegeben wurde.
      */
     private static void log(String tag, String msg, Throwable tr) {
-        if (logCallback == null) {
+        if (imageLogCallback == null) {
             Log.e(tag, msg, tr);
         } else {
-            logCallback.log(tag, msg, tr);
+            imageLogCallback.log(tag, msg, tr);
         }
     }
 
@@ -366,7 +366,7 @@ public class PickImage {
             PickImage.file = null;
             PickImage.fileConfiguration = null;
             PickImage.context = null;
-            PickImage.logCallback = null;
+            PickImage.imageLogCallback = null;
         }
 
         /**
@@ -421,12 +421,12 @@ public class PickImage {
         }
 
         /**
-         * @param logCallback gibt die Logs an die aufrufende Klasse zurück
+         * @param imageLogCallback gibt die Logs an die aufrufende Klasse zurück
          * @return
          */
-        public Configuration logCallback(LogCallback logCallback) {
-            PickImage.logCallback = logCallback;
-            fileConfiguration.logCallback(logCallback);
+        public Configuration logCallback(ImageLogCallback imageLogCallback) {
+            PickImage.imageLogCallback = imageLogCallback;
+            fileConfiguration.logCallback(imageLogCallback);
             return this;
         }
 
