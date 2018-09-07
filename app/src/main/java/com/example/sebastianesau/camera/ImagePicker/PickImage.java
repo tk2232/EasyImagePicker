@@ -8,12 +8,15 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
+
+import com.example.sebastianesau.camera.Storrage;
 
 import java.io.File;
 import java.io.IOException;
@@ -301,10 +304,27 @@ public class PickImage {
      * @return
      */
     private static boolean checkSpace() {
-        //TODO memory < device memory toast
-        Toast.makeText(context, "Test not enough space", Toast.LENGTH_LONG).show();
-        //TODO check space
-        return true;
+        if (!Storrage.isExternalStorrageReady()) {
+            return false;
+        }
+        int minStorragePercent = 10;
+        long freeInternalStorrage = Storrage.getFreeInternalStorrageSize();
+        long internalStorrageSize = Storrage.getInternalStorrageSize();
+        long freeExternalStorrage = Storrage.getFreeExternalStorrageSize();
+        long externalStorrageSize = Storrage.getExternalStorrageSize();
+
+        if (freeStorrageInPercent(internalStorrageSize, freeInternalStorrage) < minStorragePercent) {
+            return false;
+        } else if (freeStorrageInPercent(externalStorrageSize, freeExternalStorrage) < minStorragePercent) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private static double freeStorrageInPercent(double available, double free) {
+        double a = (100 / available * (available - free));
+        return (100 / available * (available - free));
     }
 
     public static CharSequence getTitle() {
@@ -333,6 +353,7 @@ public class PickImage {
         public void start() {
             if (!checkSpace()) {
                 //TODO string.xml
+                Toast.makeText(context, "Test not enough space", Toast.LENGTH_LONG).show();
                 return;
             }
             PickImage.start(activity);
