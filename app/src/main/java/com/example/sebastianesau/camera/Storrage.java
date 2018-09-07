@@ -7,8 +7,6 @@ import java.io.File;
 
 public class Storrage {
 
-    //TODO die storragesize Abragen passen noch nicht. Da liegt noch ein Fehler vor
-
     public static boolean isExternalStorrageReady() {
         return isExternalStorageAvailable() && !isExternalStorageReadOnly();
     }

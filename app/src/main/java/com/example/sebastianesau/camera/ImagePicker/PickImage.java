@@ -299,7 +299,8 @@ public class PickImage {
     }
 
     /**
-     * Prüfe ob genug speicher auf dem internal und dem external storrage vorhanden ist
+     * Prüfe ob genug speicher auf dem internal und dem external storrage vorhanden ist und
+     * genug Speicher verfügbar ist.
      *
      * @return
      */
@@ -308,14 +309,9 @@ public class PickImage {
             return false;
         }
         int minStorragePercent = 10;
-        long freeInternalStorrage = Storrage.getFreeInternalStorrageSize();
-        long internalStorrageSize = Storrage.getInternalStorrageSize();
-        long freeExternalStorrage = Storrage.getFreeExternalStorrageSize();
-        long externalStorrageSize = Storrage.getExternalStorrageSize();
-
-        if (freeStorrageInPercent(internalStorrageSize, freeInternalStorrage) < minStorragePercent) {
+        if (freeStorrageInPercent(Storrage.getInternalStorrageSize(), Storrage.getFreeInternalStorrageSize()) < minStorragePercent) {
             return false;
-        } else if (freeStorrageInPercent(externalStorrageSize, freeExternalStorrage) < minStorragePercent) {
+        } else if (freeStorrageInPercent(Storrage.getExternalStorrageSize(), Storrage.getFreeExternalStorrageSize()) < minStorragePercent) {
             return false;
         } else {
             return true;
@@ -323,8 +319,7 @@ public class PickImage {
     }
 
     private static double freeStorrageInPercent(double available, double free) {
-        double a = (100 / available * (available - free));
-        return (100 / available * (available - free));
+        return (100 / available * free);
     }
 
     public static CharSequence getTitle() {
