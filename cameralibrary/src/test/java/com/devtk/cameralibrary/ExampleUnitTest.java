@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera;
+package com.devtk.cameralibrary;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.example.cameralibrary;
+package com.devtk.tk2232.EasyImagePicker;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera.ImagePicker;
+package com.devtk.tk2232.EasyImagePicker.ImagePicker;
 
 import android.os.Environment;
 import android.os.StatFs;

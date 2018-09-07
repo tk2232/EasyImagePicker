@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera;
+package com.devtk.tk2232.EasyImagePicker;
 
 import android.Manifest;
 import android.app.Activity;

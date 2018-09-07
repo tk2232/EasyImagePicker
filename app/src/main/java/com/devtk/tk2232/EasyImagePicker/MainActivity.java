@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera;
+package com.devtk.tk2232.EasyImagePicker;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,10 +12,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
-import com.example.sebastianesau.camera.ImagePicker.Callbacks;
-import com.example.sebastianesau.camera.ImagePicker.ImageLogCallback;
-import com.example.sebastianesau.camera.ImagePicker.PickImage;
-import com.example.sebastianesau.camera.ImagePicker.ImageSource;
+import com.devtk.tk2232.EasyImagePicker.ImagePicker.Callbacks;
+import com.devtk.tk2232.EasyImagePicker.ImagePicker.ImageLogCallback;
+import com.devtk.tk2232.EasyImagePicker.ImagePicker.PickImage;
+import com.devtk.tk2232.EasyImagePicker.ImagePicker.ImageSource;
 
 import java.io.File;
 import java.util.List;

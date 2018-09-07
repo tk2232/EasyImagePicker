@@ -1,4 +1,4 @@
-package com.example.cameralibrary;
+package com.devtk.tk2232.EasyImagePicker;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.example.cameralibrary.test", appContext.getPackageName());
+        assertEquals("com.devtk.tk2232.EasyImagePicker", appContext.getPackageName());
     }
 }

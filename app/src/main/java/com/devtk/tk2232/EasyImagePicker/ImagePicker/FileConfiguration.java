@@ -1,11 +1,11 @@
-package com.example.sebastianesau.camera.ImagePicker;
+package com.devtk.tk2232.EasyImagePicker.ImagePicker;
 
 import android.app.Activity;
 import android.content.Context;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 
-import com.example.sebastianesau.camera.R;
+import com.devtk.tk2232.EasyImagePicker.R;
 
 public class FileConfiguration {
 

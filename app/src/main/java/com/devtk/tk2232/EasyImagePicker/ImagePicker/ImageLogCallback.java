@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera.ImagePicker;
+package com.devtk.tk2232.EasyImagePicker.ImagePicker;
 
 public interface ImageLogCallback {
 
