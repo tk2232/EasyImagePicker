@@ -45,6 +45,7 @@ public class FileConfiguration {
     private static String imageFileName;
     private static String suffix;
     private static boolean writeToExternalStorrage;
+    private static LogCallback logCallback;
 
     private Context context;
 
@@ -66,6 +67,7 @@ public class FileConfiguration {
         suffix = SUFFIX_DEFAULT;
         writeToExternalStorrage = WRITE_TO_EXTERNAL_STORRAGE_DEFAULT;
         imageFileName = "";
+        logCallback = null;
     }
 
     public FileConfiguration folderPath(String folderPath) {
@@ -111,6 +113,11 @@ public class FileConfiguration {
 
     public FileConfiguration suffix(String suffix) {
         this.suffix = suffix;
+        return this;
+    }
+
+    public FileConfiguration logCallback(LogCallback logCallback) {
+        this.logCallback = logCallback;
         return this;
     }
 

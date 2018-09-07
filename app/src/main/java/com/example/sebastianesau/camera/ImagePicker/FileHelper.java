@@ -10,8 +10,6 @@ import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-import com.example.sebastianesau.camera.CLog;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

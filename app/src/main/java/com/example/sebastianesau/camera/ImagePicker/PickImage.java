@@ -12,9 +12,9 @@ import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.widget.Toast;
 
-import com.example.sebastianesau.camera.CLog;
 import com.example.sebastianesau.camera.Storrage;
 
 import java.io.File;
@@ -43,6 +43,7 @@ public class PickImage {
     private static File file;
     private static FileConfiguration fileConfiguration;
     private static Context context;
+    private static LogCallback logCallback;
 
     /**
      * @param context used to access Android APIs, like content resolve, it is your
@@ -72,9 +73,10 @@ public class PickImage {
         try {
             activity.startActivityForResult(getPickImageChooserIntent(), PICK_IMAGE_REQUEST);
         } catch (IOException io) {
-            CLog.e(activity.getClass().getSimpleName(), io.getMessage(), io);
+            log.e(activity.getClass().getSimpleName(), io.getMessage(), io);
         }
     }
+
 
     /**
      * Create a chooser intent to select the source to get image from.<br>
@@ -208,6 +210,18 @@ public class PickImage {
     }
 
     /**
+     * Logt auf der Console wenn kein LogCallback angegeben wurde.
+     */
+    private static void log(String tag, String msg, Throwable tr) {
+        if (logCallback == null) {
+            Log.e(tag, msg, tr);
+        } else {
+            logCallback.log(tag, msg, tr);
+        }
+    }
+
+
+    /**
      * Diese Methode wird in der aufrufenden Activity in onActivityResult aufgerufen damit kein
      * überladener Code entsteht.
      *
@@ -336,10 +350,23 @@ public class PickImage {
         private FileConfiguration fileConfiguration;
 
         public Configuration(@NonNull Activity activity) {
+            setDefaults();
             this.activity = activity;
             context = activity;
             fileConfiguration = new FileConfiguration(context);
             PickImage.fileConfiguration = fileConfiguration;
+        }
+
+        private void setDefaults() {
+            PickImage.title = "";
+            PickImage.includeCamera = false;
+            PickImage.includeDocuments = false;
+            PickImage.includeMultipleSelect = false;
+            PickImage.copyPickedImagesToPublicGallery = true;
+            PickImage.file = null;
+            PickImage.fileConfiguration = null;
+            PickImage.context = null;
+            PickImage.logCallback = null;
         }
 
         /**
@@ -390,6 +417,16 @@ public class PickImage {
         public Configuration shouldCopyPickedImagesToPublicGalleryAppFolder(boolean copyPickedImagesToPublicGallery) {
             PickImage.copyPickedImagesToPublicGallery = copyPickedImagesToPublicGallery;
             fileConfiguration.writeToExternalStorrage(copyPickedImagesToPublicGallery);
+            return this;
+        }
+
+        /**
+         * @param logCallback gibt die Logs an die aufrufende Klasse zurück
+         * @return
+         */
+        public Configuration logCallback(LogCallback logCallback) {
+            PickImage.logCallback = logCallback;
+            fileConfiguration.logCallback(logCallback);
             return this;
         }
 
