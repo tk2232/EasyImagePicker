@@ -15,8 +15,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.sebastianesau.camera.Storrage;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package com.example.sebastianesau.camera;
+package com.example.sebastianesau.camera.ImagePicker;
 
 import android.os.Environment;
 import android.os.StatFs;
@@ -6,8 +6,6 @@ import android.os.StatFs;
 import java.io.File;
 
 public class Storrage {
-
-    //TODO testen mit File.getUsableSpace()
 
     public static boolean isExternalStorrageReady() {
         return isExternalStorageAvailable() && !isExternalStorageReadOnly();
@@ -31,50 +29,35 @@ public class Storrage {
 
     public static long getFreeInternalStorrageSize() {
         File path = Environment.getDataDirectory();
-        StatFs stat = new StatFs(path.getPath());
-        long free_memory = stat.getAvailableBlocksLong() * stat.getBlockSizeLong(); //return value is in bytes
-
-        return free_memory;
+        return path.getUsableSpace();
     }
 
     public static long getUsedInternalStorrageSize() {
         File path = Environment.getDataDirectory();
         StatFs stat = new StatFs(path.getPath());
         long free_memory = (stat.getBlockCountLong() - stat.getAvailableBlocksLong()) * stat.getBlockSizeLong(); //return value is in bytes
-
         return free_memory;
     }
 
     public static long getInternalStorrageSize() {
         File path = Environment.getDataDirectory();
-        StatFs stat = new StatFs(path.getPath());
-        long free_memory = stat.getBlockCountLong() * stat.getBlockSizeLong(); //return value is in bytes
-
-        return free_memory;
+        return path.getTotalSpace();
     }
 
-    public static long getFreeExternalStorrageSize(){
-
+    public static long getFreeExternalStorrageSize() {
         File path = Environment.getExternalStorageDirectory();
-        StatFs stat = new StatFs(path.getPath());
-        long free_memory = stat.getAvailableBlocksLong() * stat.getBlockSizeLong(); //return value is in bytes
-
-        return free_memory;
+        return path.getUsableSpace();
     }
-    public static long getUsedExternalStorrageSize(){
 
+    public static long getUsedExternalStorrageSize() {
         File path = Environment.getExternalStorageDirectory();
         StatFs stat = new StatFs(path.getPath());
         long free_memory = (stat.getBlockCountLong() - stat.getAvailableBlocksLong()) * stat.getBlockSizeLong(); //return value is in bytes
-
         return free_memory;
     }
-    public static long getExternalStorrageSize(){
 
+    public static long getExternalStorrageSize() {
         File path = Environment.getExternalStorageDirectory();
-        StatFs stat = new StatFs(path.getPath());
-        long free_memory = stat.getBlockCountLong() * stat.getBlockSizeLong(); //return value is in bytes
-
-        return free_memory;
+        return path.getTotalSpace();
     }
 }
