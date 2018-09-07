@@ -1,7 +1,22 @@
 # Camera
 
 
-Installation:
+Install:
+
+```
+allprojects {
+		repositories {
+			...
+			maven { url 'https://jitpack.io' }
+		}
+	};
+```
+
+```
+dependencies {
+	        implementation 'com.github.tk2232:EasyImagePicker:v1.0'
+	}
+```
 
 Example:
 
