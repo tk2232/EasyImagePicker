@@ -8,14 +8,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.widget.Toast;
 
+import com.example.sebastianesau.camera.CLog;
 import com.example.sebastianesau.camera.Storrage;
 
 import java.io.File;
@@ -24,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PickImage {
+
+    //TODO Callback Type muss noch hinzugefügt werden
 
     /**
      * startActivityForResult requestCode
@@ -71,8 +72,7 @@ public class PickImage {
         try {
             activity.startActivityForResult(getPickImageChooserIntent(), PICK_IMAGE_REQUEST);
         } catch (IOException io) {
-            //TODO
-            Log.e(activity.getClass().getSimpleName(), io.getMessage(), io);
+            CLog.e(activity.getClass().getSimpleName(), io.getMessage(), io);
         }
     }
 

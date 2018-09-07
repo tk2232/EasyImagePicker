@@ -51,8 +51,7 @@ public class FileConfiguration {
     public FileConfiguration(@NonNull Context context) {
         this.context = context;
         TAG = context.getClass().getSimpleName();
-        //TODO den anhang bei FolderPath ändern
-        EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString() + "_Test";
+        EXTERNAL_FOLDER_PATH_DEFAULT = ((Activity) context).getText(R.string.app_name).toString();
         INERNAL_IMAGE_TEMP_FILENAME_DEFAULT = context.getClass().getSimpleName();
         setDefaultConfig();
     }

@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openIntent() {
-        //TODO storrage isReadable/isWritable
         PickImage
                 .activity(this)
                 .includeCamera(true)

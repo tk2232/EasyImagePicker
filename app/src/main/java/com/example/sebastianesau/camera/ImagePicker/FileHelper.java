@@ -10,6 +10,8 @@ import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import com.example.sebastianesau.camera.CLog;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -46,8 +48,7 @@ public class FileHelper {
      * @return
      */
     public static File getTempImageDirectory(@NonNull FileConfiguration config) {
-        //TODO nach erfolgreichen tests auf getFilesDir
-        File privateTempDir = new File(config.getContext().getExternalFilesDir(null), config.getPrivateTempFilePathChild());
+        File privateTempDir = new File(config.getContext().getFilesDir(), config.getPrivateTempFilePathChild());
         if (!privateTempDir.exists()) {
             privateTempDir.mkdirs();
         }
@@ -77,7 +78,6 @@ public class FileHelper {
      */
     public static File pickedExistingPicture(@NonNull FileConfiguration config, Uri photoUri) throws IOException {
         InputStream pictureInputStream = config.getContext().getContentResolver().openInputStream(photoUri);
-        //TODO check File directory = tempCacheImageDirectory(config.getContext());
         File directory = getTempImageDirectory(config);
         File photoFile = new File(directory, UUID.randomUUID().toString() + "." + getMimeType(config.getContext(), photoUri));
         photoFile.createNewFile();
@@ -188,7 +188,7 @@ public class FileHelper {
                 File file = new File(config.getContext().getFilesDir(), config.getInternalImageFilename() + config.getSuffix());
                 return file;
             } else {
-                //TODO read/write error
+                CLog.e(TAG, "getTempImageFile read/write error");
             }
         } else {
 
@@ -203,7 +203,7 @@ public class FileHelper {
             if (isExternalStorageReadable() && isExternalStorageWritable()) {
                 return createImageFile(config);
             } else {
-                //TODO read/write error
+                CLog.e(TAG, "getTempImageFile read/write error");
             }
         } else {
 
@@ -278,8 +278,7 @@ public class FileHelper {
                 }
             }
         } catch (NullPointerException e) {
-            //TODO
-            Log.e(config.getContext().getClass().getSimpleName(), e.getMessage(), e);
+            CLog.e(config.getContext().getClass().getSimpleName(), e.getMessage(), e);
         }
         return false;
     }
