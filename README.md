@@ -39,4 +39,43 @@ Activity:
                 .logCallback(imageLogCallback)
                 .start();
 
+onActivityResult:
+```
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        PickImage.handleActivityResult(requestCode, resultCode, data, this, new Callbacks() {
+            @Override
+            public void onImagesPicked(@NonNull List<File> files, ImageSource imageSource, int type) {
+                Uri uri = Uri.fromFile(files.get(0));
+                mImageView.setImageURI(uri);
+            }
+
+            @Override
+            public void onCanceled(ImageSource imageSource, int type) {
+
+            }
+
+            @Override
+            public void onImagePickerError(Exception e, ImageSource imageSource, int type) {
+
+            }
+        });
+    }
+```
+ImageLogCallback
+```
+   ImageLogCallback imageLogCallback = new ImageLogCallback() {
+        @Override
+        public void log(String tag, String msg, Throwable tr) {
+
+        }
+
+        @Override
+        public void log(String tag, String msg) {
+            Log.d(tag, msg);
+        }
+    };
+```
 
